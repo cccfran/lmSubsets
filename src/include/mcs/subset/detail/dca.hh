@@ -1,7 +1,7 @@
 // Copyright 2018  Marc Hofmann
 //
 // This file is part of the 'mcs' library (see
-// <https://github.com/marc-hofmann/mcs.cc/>).
+// <https://github.com/marc-hofmann/mcs/>).
 //
 // 'mcs' is free software: you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by
@@ -38,19 +38,48 @@ dca_impl(DcaState& state) noexcept
 
     while (!state.is_final())
     {
+        // lots of things done
+        // first preorder
+        // then partial update
         state.next_node();
 
         const int n = state.node_size();
         const int k = state.node_mark();
 
+        std::cout << "***********************" << std::endl;
+        std::cout << "** node_cnt: " << node_cnt << std::endl;
+        std::cout << "node_size: " << n << std::endl;
+        std::cout << "marker: " << k << std::endl;
+        std::cout << "Subsets: ";
+        for(auto it=state.get_cur_node()->subset().cbegin();
+            it != state.get_cur_node()->subset().cend(); ++it) {
+                std::cout << *it << " ";
+            }
+        std::cout << std::endl;
+
+        std::cout << "QRZ: " << std::endl;
+        for (int i = 0; i < state.get_cur_node()->rz_mat_.nrow(); ++i) {
+            for (int j = 0; j < state.get_cur_node()->rz_mat_.ncol(); ++j) {
+                std::cout << state.get_cur_node()->rz_mat_(i, j) << " ";
+            }
+            std::cout << std::endl;
+        }
+
+        // drop k+1 to n-1 columns to sub 
         for (int j = k; j < n - 1; ++j)
         {
+            std::cout << "######################" << std::endl;
+            std::cout << "dropping " << j << std::endl;
+
             state.drop_column(j);
         }
 
+        // std::cout << std::endl;
         ++node_cnt;
     }
 
+    // std::cout << "***********************" << std::endl;
+    
     return node_cnt;
 }
 

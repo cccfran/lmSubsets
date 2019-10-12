@@ -1,7 +1,7 @@
 // Copyright 2018  Marc Hofmann
 //
 // This file is part of the 'mcs' library (see
-// <https://github.com/marc-hofmann/mcs.cc/>).
+// <https://github.com/marc-hofmann/mcs/>).
 //
 // 'mcs' is free software: you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by
@@ -61,6 +61,10 @@ public:
 
         result.assign(first, skip);
         result.insert(result.end(), skip + 1, last);
+
+        std::cout << "\t dca_subset: DROP COLUMN():" << std::endl;
+        for(auto i : result) std::cout << i << " ";
+        std::cout << std::endl;
     }
 
 

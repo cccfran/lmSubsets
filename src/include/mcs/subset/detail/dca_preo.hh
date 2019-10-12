@@ -1,7 +1,7 @@
 // Copyright 2018  Marc Hofmann
 //
 // This file is part of the 'mcs' library (see
-// <https://github.com/marc-hofmann/mcs.cc/>).
+// <https://github.com/marc-hofmann/mcs/>).
 //
 // 'mcs' is free software: you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by
@@ -64,6 +64,7 @@ public:
         dca_node& result
     ) const noexcept
     {
+        std::cout << "\t\tSWAPPPING:" << std::endl;
         result.swap(node);
     }
 
@@ -122,12 +123,16 @@ public:
     {
         const int rank = node.rank();
 
+        std::cout << "\tlimit: " << lim_ << std::endl;
+        std::cout << "\trank: " << rank << std::endl;
         if (rank > lim_)
         {
+            std::cout << "\t complete operator " << std::endl;
             a_inst_(node, result);
         }
         else
         {
+            std::cout << "\t null operator " << std::endl;
             b_inst_(node, result);
         }
     }
@@ -187,6 +192,7 @@ public:
         dca_node& result
     ) const noexcept
     {
+        std::cout << "\t\tComplelet inst operator" << std::endl;
         node.preorder_complete(result, *qrz_, aux_1_, aux_2_);
     }
 
@@ -242,6 +248,7 @@ public:
         dca_node& result
     ) const noexcept
     {
+        std::cout << "\t\t Partial1 inst operator" << std::endl;
         node.preorder_partial_1(result, *qrz_, aux_1_);
     }
 
@@ -297,6 +304,7 @@ public:
         dca_node& result
     ) const noexcept
     {
+        std::cout << "\t\t Partial2 inst operator" << std::endl;
         node.preorder_partial_2(result, *qrz_, aux_1_);
     }
 
@@ -320,6 +328,7 @@ public:
     instance
     make(const DcaState& state) const noexcept
     {
+        std::cout << "\t\t000000000000000000000 NULL MAKE" << std::endl;
         return instance();
     }
 
@@ -371,6 +380,7 @@ public:
     instance
     make(const DcaState& state) const noexcept
     {
+        std::cout << "000000000000000000000rankkkkkk make" << std::endl;
         return instance(lim_, a_.make(state), b_.make(state));
     }
 
@@ -407,6 +417,7 @@ public:
 
     radius(
         const int lim,
+        // ctor of preo_complete
         const DcaPreoA& a = DcaPreoA(),
         const DcaPreoB& b = DcaPreoB()
     ) noexcept :
@@ -422,7 +433,12 @@ public:
     instance
     make(const DcaState& state) const noexcept
     {
+        // making radius
         const int lim = state.root_size() - state.root_mark() - lim_;
+        std::cout << "\t\t RADIUS MAKEEEEEEE: " << lim << std::endl;
+
+        // rank_inst oeprator
+        // complete a_ and null b_
         return instance(lim, a_.make(state), b_.make(state));
     }
 
@@ -446,6 +462,7 @@ public:
     instance
     make(const DcaState& state) const noexcept
     {
+        std::cout << "COMPELTE 00000000000000 " << std::endl;
         return instance(&state.qrz(), state.root_size());
     }
 

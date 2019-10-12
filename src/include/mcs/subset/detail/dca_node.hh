@@ -1,7 +1,7 @@
 // Copyright 2018  Marc Hofmann
 //
 // This file is part of the 'mcs' library (see
-// <https://github.com/marc-hofmann/mcs.cc/>).
+// <https://github.com/marc-hofmann/mcs/>).
 //
 // 'mcs' is free software: you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@
 #include "mcs/subset/detail/dca_qrz.hh"
 #include "mcs/subset/detail/dca_subset.hh"
 
+#include "mcs/core/lapack.hh"
 
 
 namespace mcs    {
@@ -65,6 +66,8 @@ class dca_node
 
     using dca_qrz = detail::dca_qrz<Scalar>;
 
+    using lapack = mcs::core::lapack<Scalar>;
+
 
 
 private:
@@ -73,14 +76,37 @@ private:
 
     int mark_;
 
-    matrix rz_mat_;
+    // matrix rz_mat_;
+
+    std::vector<Scalar> qty_;
+
+    dca_qrz* qrz_;
 
 
 
 public:
 
+    matrix rz_mat_;    
+
     dca_node(const int root_size) noexcept :
         rz_mat_(root_size + 1, root_size + 1)
+    {
+        subset_.reserve(root_size);
+    }
+
+    // pass in root size and n
+    dca_node(const int root_size, const int ay_nrow) noexcept :
+        rz_mat_(root_size + 1, root_size + 1),
+        qty_(ay_nrow)
+    {
+        subset_.reserve(root_size);
+    }
+
+    // pass in whole qrz object 
+    dca_node(const int root_size, const int ay_nrow, dca_qrz* qrz) noexcept :
+        rz_mat_(root_size + 1, root_size + 1),
+        qty_(ay_nrow),
+        qrz_(qrz)
     {
         subset_.reserve(root_size);
     }
@@ -109,6 +135,26 @@ public:
         for (int j = 0; j < n; ++j)  subset_.push_back(j);
         mark_ = 0;
         rz_mat_ = rz_mat;
+
+        // std::cout << "root of node mark: " << mark_ << std::endl;
+        // std::cout << "root of node cols: " << n << std::endl;
+    }
+
+
+    // pass tri and qty
+    void
+    root(matrix_cspan rz_mat, std::vector<Scalar> qty) noexcept
+    {
+        const int n = rz_mat.ncol() - 1;
+
+        for (int j = 0; j < n; ++j)  subset_.push_back(j);
+        mark_ = 0;
+        rz_mat_ = rz_mat;
+        qty_ = qty;
+
+
+        // std::cout << "root of node mark: " << mark_ << std::endl;
+        // std::cout << "root of node cols: " << n << std::endl;
     }
 
 
@@ -159,10 +205,15 @@ public:
     void
     for_each(Function f) const noexcept
     {
+        // get all rss of submodel in this node
         const int n = size();
         const int k = mark_;
+        // const int m = qty_.size();
+        const std::string side = "L";
+        const std::string trans = "N";
 
         gsl::span<const int> s = subset_;
+        std::vector<Scalar> aux_work_(n);
 
         const Scalar* z_ptr = rz_mat_.ptr(n, n);
         Scalar rss = 0;
@@ -173,6 +224,77 @@ public:
 
             f(s.first(j), rss);
         }
+
+        std::cout << "dca_node: for_each()" << std::endl;
+        std::cout << "size of rz: (" << rz_mat_.nrow() << ", " << rz_mat_.ncol() << std::endl;
+        // std::cout << "calculating rss: of (size " << n << "):  ";
+        // for(auto x : s) std::cout << x << " ";
+        // std::cout << std::endl;
+
+        // lapack::trtrs(rz_mat_({0, n-1}, {0, n-1}), rz_mat_({0, n-1}, {n, n}));
+        // for(auto x : rz_mat_({0, n-1}, {0, n-1})) std::cout << x << " ";
+        //     std::cout << std::endl;
+        matrix_cspan rz_span = rz_mat_({0, n}, {0, n});
+        matrix_cspan qyc = rz_mat_({0, n}, {n, 1});
+
+        // beta hat
+        matrix betahat(qyc);
+        lapack::trtrs(rz_span, betahat);
+
+        std::cout << "BETA" << std::endl;
+        for(int i = 0; i < n; ++i) {
+            std::cout << betahat(i, 0) << " ";
+        }
+        std::cout << std::endl;
+
+        // residual 
+        matrix residual(qrz_->get_qty());
+        for (int j = 0; j < n; j++) {
+            residual(j,0) = 0;
+            // std::cout << residual[j] << " ";
+        }
+        // std::cout << "HHHHHHHHHHHHHHHHHHHHHHH" << std::endl;
+        // for (int j = 0; j < n; j++) {
+        //     std::cout << qrz_->get_qty()[j] << " ";
+        // }
+
+        // matrix residual(m, 1);
+        // for (int j = 0; j < m; j++) {
+        //     residual(j, 0) = qrz_->get_qty()[j];
+        //     if (j < n) residual(j, 0) = 0;
+        //     // std::cout << residual(j, 0) << " ";
+        // }
+
+        std::cout << "BEFORE" << std::endl;
+        for (int j = 0; j < 10; j++) {
+            std::cout << residual(j,0) << " ";
+        }
+        std::cout << std::endl;
+
+
+        // std::cout << "HHHHHHHHHHHHHHHHHHHHHHH" << std::endl;
+        // for(int i = 0; i < 10; i++) {
+        //     for (int j = 0; j < n; j++) {
+        //         std::cout << qrz_->get_qrr()(i, j) << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
+        // std::cout << std::endl;
+
+        for (int j = 0; j < n; j++) {
+            std::cout << qrz_->get_tau()[j] << " ";
+        }
+
+        std::cout << std::endl;
+        
+        // multiply Q
+        lapack::ormqr(side, trans, n, qrz_->get_qrr(), qrz_->get_tau(), residual, aux_work_);
+
+        std::cout << "AFTER" << std::endl;
+        for (int j = 0; j < 10; j++) {
+            std::cout << residual(j,0) << " ";
+        }
+        std::cout << std::endl;
     }
 
 
@@ -189,8 +311,15 @@ public:
 
         matrix_cspan rz_span = rz_mat_({0, n+1}, {0, n+1});
 
+        // init next node (result)
+        // subset_, mark_, rz_mat_
+        // drop k-th
+        // take care of the subset
         dca_subset::drop_column(subset_, k, result.subset_);
         result.mark_ = k;
+        // drop k-th column of R and Givens rotation
+        std::cout << "## NODE: drop column " << mark << std::endl;
+        // std::cout << "result.rz_mat_: " << result.rz_mat_.ldim() << std::endl;
         qrz.drop_column(rz_span, k, result.rz_mat_);
     }
 

@@ -1,7 +1,7 @@
 // Copyright 2018  Marc Hofmann
 //
 // This file is part of the 'mcs' library (see
-// <https://github.com/marc-hofmann/mcs.cc/>).
+// <https://github.com/marc-hofmann/mcs/>).
 //
 // 'mcs' is free software: you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by
@@ -83,9 +83,12 @@ dca_all(
     using preo_radius = dca_preo::radius<Scalar, preo_complete>;
     using dca_state = dca_state_all<Scalar, preo_radius>;
 
+    // std::cout << "Inside dca" << std::endl;
     dca_state state(ay_mat, mark, nbest, preo_radius(prad));
+    std::cout << "FInish init" << std::endl;
     const int nodes = detail::dca_all<Scalar, dca_state>(state);
 
+    // build table and return number of nodes
     return { state.table(), nodes };
 }
 

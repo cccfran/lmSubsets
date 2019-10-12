@@ -1,7 +1,7 @@
 // Copyright 2018  Marc Hofmann
 //
 // This file is part of the 'mcs' library (see
-// <https://github.com/marc-hofmann/mcs.cc/>).
+// <https://github.com/marc-hofmann/mcs/>).
 //
 // 'mcs' is free software: you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by
@@ -71,6 +71,7 @@ public:
     ) noexcept
     {
         heaps_.reserve(root_size);
+        std::cout << "HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHeap" << root_size << std::endl;
         for (int size = 1; size <= root_size; ++size)
         {
             heaps_.emplace_back(size, nbest);
@@ -107,6 +108,24 @@ public:
             });
     }
 
+
+    // void
+    // update(const dca_node& node, const dca_qrz& qrz_) noexcept
+    // {
+    //     node.for_each(
+    //         [this](
+    //             gsl::span<const int> subset,
+    //             const Scalar rss
+    //         ) -> void {
+    //             const int size = subset.size();
+
+    //             auto& heap = heaps_[size - 1];
+    //             if (rss < heap.max_key())
+    //             {
+    //                 heap.insert(subset, rss);
+    //             }
+    //         });
+    // }
 
 
     std::vector<std::vector<dca_result>>

@@ -1,7 +1,7 @@
 // Copyright 2018  Marc Hofmann
 //
 // This file is part of the 'mcs' library (see
-// <https://github.com/marc-hofmann/mcs.cc/>).
+// <https://github.com/marc-hofmann/mcs/>).
 //
 // 'mcs' is free software: you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by
@@ -223,13 +223,31 @@ public:
 
 
 
+    // static int
+    // ormqr(
+    //     const std::string& side,
+    //     const std::string& trans,
+    //     const int k,
+    //     matrix_cspan a,
+    //     vector_cspan tau,
+    //     matrix_span c,
+    //     gsl::span<Scalar> work
+    // ) noexcept
+    // {
+    //     const int m = c.nrow();
+    //     const int n = c.ncol();
+
+    //     return ormqr(side.c_str(), trans.c_str(), m, n, k, a.base(), a.ldim(),
+    //                  tau.base(), c.base(), c.ldim(), work.data(), work.size());
+    // }
+
     static int
     ormqr(
         const std::string& side,
         const std::string& trans,
         const int k,
         matrix_cspan a,
-        vector_cspan tau,
+        std::vector<Scalar> tau,
         matrix_span c,
         gsl::span<Scalar> work
     ) noexcept
@@ -238,9 +256,8 @@ public:
         const int n = c.ncol();
 
         return ormqr(side.c_str(), trans.c_str(), m, n, k, a.base(), a.ldim(),
-                     tau.base(), c.base(), c.ldim(), work.data(), work.size());
+                     tau.data(), c.base(), c.ldim(), work.data(), work.size());
     }
-
 
 
     static int
@@ -259,6 +276,36 @@ public:
         int lwork
     ) noexcept;
 
+
+    static int
+    trtrs(
+        matrix_cspan a,
+        matrix_span b
+    ) noexcept
+    {
+        const int n = a.nrow();
+        const int d = a.ncol();
+        const int dy = b.ncol();
+        const char uplo = 'U';
+        const char trans = 'N';
+        const char diag = 'N';
+        
+        return trtrs(&uplo, &trans, &diag, d, dy, a.base(), a.ldim(), b.base(), b.ldim());
+    }
+
+
+    static int
+    trtrs(
+        const char* uplo,
+        const char* trans,
+        const char* diag,
+        int n,
+        int nrhs,
+        const Scalar* a,
+        int lda,
+        Scalar* b,
+        int ldb
+    ) noexcept;
 
 
 public:

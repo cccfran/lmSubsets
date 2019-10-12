@@ -1,7 +1,7 @@
 // Copyright 2018  Marc Hofmann
 //
 // This file is part of the 'mcs' library (see
-// <https://github.com/marc-hofmann/mcs.cc/>).
+// <https://github.com/marc-hofmann/mcs/>).
 //
 // 'mcs' is free software: you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by
@@ -113,16 +113,18 @@ public:
         const int incyy
     ) noexcept
     {
+        // std::cout << "#### ZERO: " <<std::endl;
         if (n > 0)
         {
             const givens g(*x, *y);
-
+            // update row
             g.rot(n - 1, x + incx, incx, y + incy, incy, xx + incxx, incxx,
                   yy + incyy, incyy);
 
             *xx = g.r_;
             *yy = 0;
         }
+        // std::cout << std::endl;
     }
 
 
@@ -291,7 +293,9 @@ public:
     ) const noexcept
     {
         for (int i = 0; i < n; ++i)
-        {
+        {   
+            // std::cout << "###### Givens: " << std::endl;
+            // std::cout << "###### (i,j)" << std::endl;
             const Scalar t = c_ * (*x) + s_ * (*y);
             *yy = -s_ * (*x) + c_ * (*y);
             *xx = t;

@@ -1,7 +1,7 @@
 // Copyright 2018  Marc Hofmann
 //
 // This file is part of the 'mcs' library (see
-// <https://github.com/marc-hofmann/mcs.cc/>).
+// <https://github.com/marc-hofmann/mcs/>).
 //
 // 'mcs' is free software: you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by
@@ -107,6 +107,21 @@ MCS_F77_NAME(dormqr)(
     const int* ldc,
     double* work,
     const int* lwork,
+    int* info
+);
+
+
+void
+MCS_F77_NAME(dtrtrs)(
+    const char* uplo,
+    const char* trans,
+    const char* diag,
+    const int* n,
+    const int* nrhs,
+    const double* a,
+    const int* lda,
+    double* b,
+    const int* ldb,
     int* info
 );
 
@@ -236,6 +251,29 @@ lapack<double>::ormqr(
 
     return info;
 }
+
+
+template<>
+inline int
+lapack<double>::trtrs(
+    const char* const uplo,
+    const char* const trans,
+    const char* const diag,
+    const int n,
+    const int nrhs,
+    const double* const a,
+    const int lda,
+    double* const b,
+    const int ldb
+) noexcept
+{
+    int info = 0;
+
+    MCS_F77_CALL(dtrtrs)(uplo, trans, diag, &n, &nrhs, a, &lda, b, &ldb, &info);
+
+    return info;
+}
+
 
 
 

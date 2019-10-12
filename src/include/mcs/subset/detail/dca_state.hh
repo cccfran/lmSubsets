@@ -1,7 +1,7 @@
 // Copyright 2018  Marc Hofmann
 //
 // This file is part of the 'mcs' library (see
-// <https://github.com/marc-hofmann/mcs.cc/>).
+// <https://github.com/marc-hofmann/mcs/>).
 //
 // 'mcs' is free software: you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by
@@ -58,6 +58,9 @@ class dca_state_base
 
     using matrix_cspan = mcs::core::matrix<const Scalar&>;
 
+    // return type of NodeXfer.make(dca_state_base)
+    // where NodeXfer is of type dca_state
+    // and make return an instance with R and root size
     using node_xfer_inst = decltype(
         std::declval<NodeXfer>().
         make(std::declval<dca_state_base>())
@@ -67,6 +70,7 @@ class dca_state_base
 
 public:
 
+    // node stack 
     std::vector<dca_node> node_stk_;
 
     typename decltype(node_stk_)::iterator cur_node_;
@@ -94,7 +98,7 @@ public:
         const int mark,
         const NodeXfer& node_xfer
     ) noexcept :
-        qrz_(ay_mat.ncol() - 1),
+        qrz_(ay_mat.ncol() - 1, ay_mat.nrow()),
         root_size_(ay_mat.ncol() - 1),
         root_mark_(mark),
         root_rank_(root_size_ - root_mark_)
@@ -103,20 +107,33 @@ public:
         const int k = root_mark_;
         const int p = root_rank_;
 
+        // std::cout << "root size: " << n << std::endl;
+        // std::cout << "root mark: " << k << std::endl;
+        // std::cout << "root rank: " << p << std::endl;
+
+        // size of the stack
         node_stk_.reserve(p);
         for (int i = 0; i < p; ++i)
-        {
-            node_stk_.emplace_back(p);
+        {   
+            // emplace_back: append new container (dca_node) at the end
+            node_stk_.emplace_back(p, ay_mat.nrow(), &qrz_);
         }
 
         cur_node_ = node_stk_.begin();
 
         nxt_node_ = cur_node_ + 1;
+        // pass the tri
+        // p+1 because of y
         nxt_node_->root(qrz_.rz(ay_mat)({k, p+1}, {k, p+1}));
+
 
         root_rss_ = nxt_node_->rss();
 
+        
+        // a return rank_instance<Scalar, complete_ins, null_inst>
         node_xfer_ = node_xfer.make(*this);
+
+
     }
 
 
@@ -134,6 +151,7 @@ public:
     void
     next_node() noexcept
     {
+        // preorder
         node_xfer_(*nxt_node_, *cur_node_);
         --nxt_node_;
     }
@@ -169,6 +187,14 @@ public:
     {
         ++nxt_node_;
         cur_node_->drop_column(mark - root_mark_, *nxt_node_, qrz_);
+
+        // std::cout << "\t" << "mark" << mark-root_mark_ << std::endl;
+        // std::cout << "\t";
+        // for(auto it=nxt_node_->subset().cbegin();
+        //     it != nxt_node_->subset().cend(); ++it) {
+        //         std::cout << ' ' << *it;
+        //     }
+        // std::cout << std::endl;
     }
 
 
@@ -211,6 +237,10 @@ public:
         return qrz_;
     }
 
+    typename decltype(node_stk_)::iterator get_cur_node() 
+    {
+        return cur_node_;
+    }
 };
 
 
@@ -268,6 +298,8 @@ public:
 
     using base::root_rss;
 
+    using base::get_cur_node;
+
 
 
     Scalar
@@ -282,7 +314,9 @@ public:
     next_node() noexcept
     {
         base::next_node();
+        // partial get update!
         partial_.update(*base::cur_node_);
+        // partial_.update(*base::cur_node_, base::qrz_);
     }
 
 
@@ -310,14 +344,28 @@ public:
 
         const auto prefix = util::iota(0, root_mark);
 
+        // return dca_result type
         const auto xform = [&prefix, &root_mark](
             const dca_result& r
         ) -> dca_result {
             if (!r)  return {};
 
+            // auto subset_ret = util::transform(r, [&root_mark](int i) {
+            //                 return i + root_mark;
+            //             });
+
+            // std::cout << "*** table: " << r.key() << std::endl;
+            // std::cout << "prefix: " << std::endl;
+            // for(auto x : subset_ret) std::cout << x << ' ';
+            // std::cout << std::endl;
+            // for(auto x : r.subset()) std::cout << x  << ' ';
+            // std::cout << std::endl;
+
             return {
                 util::concat(
                     prefix,
+                    // [] returns the subset[i] of this state
+                    // for each subset[i], add root_mark
                     util::transform(r, [&root_mark](int i) {
                             return i + root_mark;
                         })
@@ -325,10 +373,12 @@ public:
                 r.key()
             };
         };
+        
 
         return util::concat(
             util::repeat(util::repeat(dca_result(), nbest_), root_mark),
             util::transform(
+                // partial_ restore results of rss in a heap
                 partial_.results(),
                 [&xform](const std::vector<dca_result>& r) {
                     return util::transform(r, xform);

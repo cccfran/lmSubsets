@@ -1,7 +1,7 @@
 // Copyright 2018  Marc Hofmann
 //
 // This file is part of the 'mcs' library (see
-// <https://github.com/marc-hofmann/mcs.cc/>).
+// <https://github.com/marc-hofmann/mcs/>).
 //
 // 'mcs' is free software: you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by
@@ -66,6 +66,9 @@ private:
 
     mutable std::vector<givens> aux_givens_;
 
+    mutable matrix qty_;
+
+    mutable matrix qrr;
 
 
 public:
@@ -77,35 +80,72 @@ public:
     {
     }
 
-
+    dca_qrz(const int root_size, const int ay_nrow) noexcept :
+        aux_work_(root_size + 1),
+        aux_tau_(root_size + 1),
+        aux_givens_(root_size + 1),
+        qty_(ay_nrow, 1),
+        qrr(ay_nrow, root_size)
+    {
+    }
 
 public:
 
+    // QR ay_mat and get tau and qty_
     matrix
     rz(matrix_cspan ay_mat) noexcept
     {
         const int n = ay_mat.ncol() - 1;
+        const int m = ay_mat.nrow() ;
+        const int dy = 1;
+        const std::string side = "L";
+        const std::string trans = "T";
 
         matrix rz_tmp = ay_mat;
         lapack::geqr2(rz_tmp, aux_tau_, aux_work_);
+        qrr = rz_tmp({0, m}, {0, n});
+
+        std::cout << "dca_qrz: rz()" << std::endl;
+        std::cout << "Checkthings ********************" << std::endl;
+        for(int i = 0; i < m; ++i) {
+            qty_(i,0) = ay_mat(i, n);
+            if (i < 10) std::cout << qty_(i,0) << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "QR matrix ********************" << std::endl;
+        for(int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                std::cout << qrr(i, j) << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+
+        lapack::ormqr(side, trans, n, qrr, aux_tau_, qty_, aux_work_);
+
+        std::cout << "QTy ********************" << std::endl;
+        for(int i = 0; i < 10; ++i) {
+            std::cout << qty_(i,0) << " ";
+        }
+        std::cout << std::endl;
 
         return rz_tmp({0, n + 1}, {0, n + 1});
     }
 
+    std::vector<Scalar>
+    get_tau() {
+        return aux_tau_;
+    }
 
+    matrix
+    get_qty() {
+        return qty_;
+    }
 
-    void
-    drop_column(
-        matrix_cspan rz_mat,
-        const int mark,
-        matrix_span out_mat
-    ) const noexcept
-    {
-        const int n = rz_mat.ncol() - 1;
-        const int k = mark;
-
-        drop_column(n - k, rz_mat.ptr(k, k), rz_mat.ldim(), out_mat.ptr(k, k),
-                    out_mat.ldim());
+    matrix
+    get_qrr() {
+        return qrr;
     }
 
 
@@ -174,6 +214,45 @@ public:
     }
 
 
+    void
+    drop_column(
+        matrix_cspan rz_mat,
+        const int mark,
+        matrix_span out_mat
+    ) const noexcept
+    {
+        const int n = rz_mat.ncol() - 1;
+        const int k = mark;
+
+        
+        std::cout << "### QRZ_: drop column public " << k << std::endl;
+        // std::cout << "### rz_mat: (" << k << ", " << k << "): " << rz_mat(k, k) << std::endl;
+        for (int i = 0; i < rz_mat.nrow(); ++i) {
+            for (int j = 0; j < rz_mat.ncol(); ++j ) {
+                std::cout << *(rz_mat.ptr(i, j)) << "\t" ;
+            }
+            std::cout << std::endl;
+        }
+        std::cout << "### result.rz_mat_: " << out_mat.ldim() << std::endl;
+        for (int i = 0; i < out_mat.nrow(); ++i) {
+            for (int j = 0; j < out_mat.ncol(); ++j ) {
+                std::cout << *(out_mat.ptr(i, j)) << "\t" ;
+            }
+            std::cout << std::endl;
+        }
+
+        drop_column(n - k, rz_mat.ptr(k, k), rz_mat.ldim(), out_mat.ptr(k, k),
+                    out_mat.ldim());
+
+        std::cout << "### result.rz_mat_: " << out_mat.ldim() << std::endl;
+        for (int i = 0; i < out_mat.nrow(); ++i) {
+            for (int j = 0; j < out_mat.ncol(); ++j ) {
+                std::cout << *(out_mat.ptr(i, j)) << "\t" ;
+            }
+            std::cout << std::endl;
+        }
+    }
+
 
 private:
 
@@ -186,17 +265,53 @@ private:
         const int ldout
     ) noexcept
     {
+        std::cout << "rz matrix" << std::endl;
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < n; ++j ) {
+                std::cout << *(rz + j*n + i) << "\t" ;
+            }
+            std::cout << std::endl;
+        }
+
+        std::cout << "### QRZ_: drop column private" << std::endl;
+        std::cout << "ldrz: " << ldrz << std::endl;
+        std::cout << "ldout: " << ldout << std::endl;
+        // column-order matrix
+        std::cout << "rz+ldrz: " << *(rz+ldrz) << std::endl;
+        std::cout << "rz+ldrz+1: " << *(rz+ldrz+1) << std::endl;
+        std::cout << "out: " << *(out) << std::endl;
+        std::cout << "out+1: " << *(out+1) << std::endl;
+        std::cout <<"########### inside drop col:\t" << n << " " << std::endl;
+
         givens::zero(n, rz + ldrz, ldrz, rz + ldrz + 1, ldrz, out, ldout,
                      out + 1, ldout);
 
+        std::cout << n << " " << std::endl;
+            for (int i = 0; i < n; ++i) {
+                for (int j = 0; j < n; ++j ) {
+                    std::cout << *(out + j*n + i) << "\t" ;
+                }
+                std::cout << std::endl;
+            }
+
         while (--n > 0)
         {
+            // increasing element
             rz += ldrz + 1;
             out += ldout + 1;
 
             givens::zero(n, out, ldout, rz + ldrz + 1, ldrz, out, ldout,
                          out + 1, ldout);
+            std::cout << "inside drop col:\t" << n << " " << std::endl;
+            for (int i = 0; i < n; ++i) {
+                for (int j = 0; j < n; ++j ) {
+                    std::cout << *(out + j*n + i) << "\t" ;
+                }
+                std::cout << std::endl;
+            }
         }
+
+
     }
 
 
