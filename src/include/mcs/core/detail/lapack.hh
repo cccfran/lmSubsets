@@ -308,6 +308,25 @@ public:
     ) noexcept;
 
 
+    static int
+    gemm(
+        const char* transA,
+        const char* transB,
+        int m,
+        int n,
+        int k,
+        double alpha,
+        const Scalar* A,
+        int lda,
+        const Scalar* B,
+        int ldb,
+        double beta, 
+        Scalar* C, 
+        int ldc
+    ) noexcept;
+    // C = alpha * A * B + beta*C
+    // m: row of A,C; n: col of B; k: col of A
+
 public:
 
     lapack() = delete;

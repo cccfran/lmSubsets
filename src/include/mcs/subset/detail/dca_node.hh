@@ -82,11 +82,16 @@ private:
 
     dca_qrz* qrz_;
 
+    int m;
 
 
 public:
 
     matrix rz_mat_;    
+
+    matrix X;
+
+    matrix y;
 
     dca_node(const int root_size) noexcept :
         rz_mat_(root_size + 1, root_size + 1)
@@ -103,10 +108,17 @@ public:
     }
 
     // pass in whole qrz object 
-    dca_node(const int root_size, const int ay_nrow, dca_qrz* qrz) noexcept :
+    dca_node(const int root_size, 
+             const int ay_nrow, 
+             dca_qrz* qrz, 
+             matrix X_,
+             matrix y_) noexcept :
         rz_mat_(root_size + 1, root_size + 1),
         qty_(ay_nrow),
-        qrz_(qrz)
+        qrz_(qrz), 
+        X(X_),
+        y(y_),
+        m(ay_nrow)
     {
         subset_.reserve(root_size);
     }
@@ -249,51 +261,52 @@ public:
         }
         std::cout << std::endl;
 
-        // residual 
-        matrix residual(qrz_->get_qty());
-        for (int j = 0; j < n; j++) {
-            residual(j,0) = 0;
-            // std::cout << residual[j] << " ";
+        // residual y - Xb
+        matrix residual(y);
+        int beta_front  = 0, prev_front = subset_.front(), prev = subset_.front() - 1, ctr = 0;
+        const char transno = 'N';
+        for(auto it = subset_.cbegin(); it != subset_.cend(); ++it) {
+            std::cout << "it: " << *it << "; prev: " << prev << std::endl;
+            if(*it != (prev + 1)) {
+                std::cout << "X: " << std::endl;
+                for(int i = 0; i < m; i++) {
+                    for(int j = prev_front; j < prev_front + ctr; j++) {
+                        std::cout << X(i,j) << "\t";
+                    }
+                    std::cout << std::endl;
+                }
+                lapack::gemm(&transno, &transno, m, 1, ctr, -1.0, 
+                    X.ptr(0, prev_front), m, betahat.ptr(beta_front, 0), ctr, 1.0, residual.base(), m);
+                std::cout << std::endl << "AFTER: " << ctr << std::endl;
+                for (int j = 0; j < m; j++) {
+                    std::cout << residual(j,0) << " ";
+                }
+                std::cout << std::endl;
+
+                beta_front += ctr; prev_front = prev = *it; ctr = 1;
+            } else {++prev; ++ctr;}
+
+            if(next(it) == subset_.cend()) {
+                std::cout << "!X: " << std::endl;
+                for(int i = 0; i < m; i++) {
+                    for(int j = prev_front; j < prev_front + ctr; j++) {
+                        std::cout << X(i,j) << "\t";
+                    }
+                    std::cout << std::endl;
+                }
+                std::cout << "Beta: " << beta_front << betahat(beta_front, 0)  << std::endl;
+                lapack::gemm(&transno, &transno, m, 1, ctr, -1.0, 
+                    X.ptr(0, prev_front), m, betahat.ptr(beta_front, 0), ctr, 1.0, residual.base(), m);
+                std::cout << std::endl << "AFTER: " << ctr << std::endl;
+                for (int j = 0; j < m; j++) {
+                    std::cout << residual(j,0) << " ";
+                }
+                std::cout << std::endl;
+            }
         }
-        // std::cout << "HHHHHHHHHHHHHHHHHHHHHHH" << std::endl;
-        // for (int j = 0; j < n; j++) {
-        //     std::cout << qrz_->get_qty()[j] << " ";
-        // }
 
-        // matrix residual(m, 1);
-        // for (int j = 0; j < m; j++) {
-        //     residual(j, 0) = qrz_->get_qty()[j];
-        //     if (j < n) residual(j, 0) = 0;
-        //     // std::cout << residual(j, 0) << " ";
-        // }
-
-        std::cout << "BEFORE" << std::endl;
-        for (int j = 0; j < 10; j++) {
-            std::cout << residual(j,0) << " ";
-        }
-        std::cout << std::endl;
-
-
-        // std::cout << "HHHHHHHHHHHHHHHHHHHHHHH" << std::endl;
-        // for(int i = 0; i < 10; i++) {
-        //     for (int j = 0; j < n; j++) {
-        //         std::cout << qrz_->get_qrr()(i, j) << " ";
-        //     }
-        //     std::cout << std::endl;
-        // }
-        // std::cout << std::endl;
-
-        for (int j = 0; j < n; j++) {
-            std::cout << qrz_->get_tau()[j] << " ";
-        }
-
-        std::cout << std::endl;
-        
-        // multiply Q
-        lapack::ormqr(side, trans, n, qrz_->get_qrr(), qrz_->get_tau(), residual, aux_work_);
-
-        std::cout << "AFTER" << std::endl;
-        for (int j = 0; j < 10; j++) {
+        std::cout << std::endl << "res" << std::endl;
+        for (int j = 0; j < m; j++) {
             std::cout << residual(j,0) << " ";
         }
         std::cout << std::endl;

@@ -127,6 +127,25 @@ MCS_F77_NAME(dtrtrs)(
 
 
 
+void
+MCS_F77_NAME(dgemm)(
+    const char* transA,
+    const char* transB,
+    const int* m,
+    const int* n,
+    const int* k,
+    const double* alpha,
+    const double* A,
+    const int* lda,
+    const double* B,
+    const int* ldb,
+    const double* beta, 
+    double* C, 
+    const int* ldc
+);
+
+
+
 }  // end extern "C"
 
 
@@ -274,6 +293,33 @@ lapack<double>::trtrs(
     return info;
 }
 
+
+template<>
+inline int
+lapack<double>::gemm(
+    const char* const transA,
+    const char* const transB,
+    const int m,
+    const int n,
+    const int k,
+    const double alpha,
+    const double* const A,
+    const int lda,
+    const double* const B,
+    const int ldb,
+    double const beta, 
+    double* const C, 
+    const int ldc
+) noexcept
+{
+    int info = 0;
+
+    MCS_F77_CALL(dgemm)(transA, transB, &m, &n, &k, 
+                        &alpha, A, &lda, B, &ldb, &beta, C, &ldc);
+    info = 1;
+
+    return info;
+}
 
 
 

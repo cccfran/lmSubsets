@@ -89,7 +89,9 @@ public:
 
     Scalar root_rss_;
 
+    matrix_cspan X_;
 
+    matrix_cspan y_;
 
 public:
 
@@ -101,7 +103,9 @@ public:
         qrz_(ay_mat.ncol() - 1, ay_mat.nrow()),
         root_size_(ay_mat.ncol() - 1),
         root_mark_(mark),
-        root_rank_(root_size_ - root_mark_)
+        root_rank_(root_size_ - root_mark_),
+        X_(ay_mat({0, ay_mat.nrow()}, {0, ay_mat.ncol()-1})),
+        y_(ay_mat({0, ay_mat.nrow()}, {ay_mat.ncol()-1, 1}))
     {
         const int n = root_size_;
         const int k = root_mark_;
@@ -116,7 +120,9 @@ public:
         for (int i = 0; i < p; ++i)
         {   
             // emplace_back: append new container (dca_node) at the end
-            node_stk_.emplace_back(p, ay_mat.nrow(), &qrz_);
+            node_stk_.emplace_back(p, ay_mat.nrow(), 
+                &qrz_, X_, y_);
+            // node_stk_.emplace_back(p, ay_mat.nrow(), &qrz_);
         }
 
         cur_node_ = node_stk_.begin();
