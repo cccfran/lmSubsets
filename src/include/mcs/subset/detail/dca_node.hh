@@ -234,12 +234,14 @@ public:
         // lapack::trtrs(rz_mat_({0, n-1}, {0, n-1}), rz_mat_({0, n-1}, {n, n}));
         // for(auto x : rz_mat_({0, n-1}, {0, n-1})) std::cout << x << " ";
         //     std::cout << std::endl;
-        matrix_cspan rz_span = rz_mat_({0, n}, {0, n});
+        // matrix_cspan rz_span = rz_mat_({0, n}, {0, n});
+        // matrix_cspan qyc = rz_mat_({0, n}, {n, 1});
+
         matrix_cspan qyc = rz_mat_({0, n}, {n, 1});
 
         // beta hat
         matrix betahat(qyc);
-        lapack::trtrs(rz_span, betahat);
+        lapack::trtrs(rz_mat_({0, n}, {0, n}), betahat);
 
         std::cout << "BETA" << std::endl;
         for(int i = 0; i < n; ++i) {

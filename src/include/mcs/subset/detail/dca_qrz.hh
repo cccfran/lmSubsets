@@ -233,16 +233,23 @@ public:
             }
             std::cout << std::endl;
         }
-        std::cout << "### result.rz_mat_: " << out_mat.ldim() << std::endl;
-        for (int i = 0; i < out_mat.nrow(); ++i) {
-            for (int j = 0; j < out_mat.ncol(); ++j ) {
-                std::cout << *(out_mat.ptr(i, j)) << "\t" ;
-            }
-            std::cout << std::endl;
-        }
+        // std::cout << "### result.rz_mat_: " << out_mat.ldim() << std::endl;
+        // for (int i = 0; i < out_mat.nrow(); ++i) {
+        //     for (int j = 0; j < out_mat.ncol(); ++j ) {
+        //         std::cout << *(out_mat.ptr(i, j)) << "\t" ;
+        //     }
+        //     std::cout << std::endl;
+        // }
 
         drop_column(n - k, rz_mat.ptr(k, k), rz_mat.ldim(), out_mat.ptr(k, k),
                     out_mat.ldim());
+        // fill in firs˜t (k-1) row
+        for(int i = 0; i < k; i++) {
+            for(int j = 0; j < n; j++) {
+                if(j < k) out_mat.elem(i,j) = rz_mat.elem(i, j);
+                else out_mat.elem(i,j) = rz_mat.elem(i, j+1);
+            }
+        }
 
         std::cout << "### result.rz_mat_: " << out_mat.ldim() << std::endl;
         for (int i = 0; i < out_mat.nrow(); ++i) {
@@ -265,34 +272,34 @@ private:
         const int ldout
     ) noexcept
     {
-        std::cout << "rz matrix" << std::endl;
-        for (int i = 0; i < n; ++i) {
-            for (int j = 0; j < n; ++j ) {
-                std::cout << *(rz + j*n + i) << "\t" ;
-            }
-            std::cout << std::endl;
-        }
+        // std::cout << "rz matrix" << std::endl;
+        // for (int i = 0; i < n; ++i) {
+        //     for (int j = 0; j < n; ++j ) {
+        //         std::cout << *(rz + j*n + i) << "\t" ;
+        //     }
+        //     std::cout << std::endl;
+        // }
 
-        std::cout << "### QRZ_: drop column private" << std::endl;
-        std::cout << "ldrz: " << ldrz << std::endl;
-        std::cout << "ldout: " << ldout << std::endl;
-        // column-order matrix
-        std::cout << "rz+ldrz: " << *(rz+ldrz) << std::endl;
-        std::cout << "rz+ldrz+1: " << *(rz+ldrz+1) << std::endl;
-        std::cout << "out: " << *(out) << std::endl;
-        std::cout << "out+1: " << *(out+1) << std::endl;
-        std::cout <<"########### inside drop col:\t" << n << " " << std::endl;
+        // std::cout << "### QRZ_: drop column private" << std::endl;
+        // std::cout << "ldrz: " << ldrz << std::endl;
+        // std::cout << "ldout: " << ldout << std::endl;
+        // // column-order matrix
+        // std::cout << "rz+ldrz: " << *(rz+ldrz) << std::endl;
+        // std::cout << "rz+ldrz+1: " << *(rz+ldrz+1) << std::endl;
+        // std::cout << "out: " << *(out) << std::endl;
+        // std::cout << "out+1: " << *(out+1) << std::endl;
+        // std::cout <<"########### inside drop col:\t" << n << " " << std::endl;
 
         givens::zero(n, rz + ldrz, ldrz, rz + ldrz + 1, ldrz, out, ldout,
                      out + 1, ldout);
 
-        std::cout << n << " " << std::endl;
-            for (int i = 0; i < n; ++i) {
-                for (int j = 0; j < n; ++j ) {
-                    std::cout << *(out + j*n + i) << "\t" ;
-                }
-                std::cout << std::endl;
-            }
+        // std::cout << n << " " << std::endl;
+        //     for (int i = 0; i < n; ++i) {
+        //         for (int j = 0; j < n; ++j ) {
+        //             std::cout << *(out + j*n + i) << "\t" ;
+        //         }
+        //         std::cout << std::endl;
+        //     }
 
         while (--n > 0)
         {
@@ -302,13 +309,13 @@ private:
 
             givens::zero(n, out, ldout, rz + ldrz + 1, ldrz, out, ldout,
                          out + 1, ldout);
-            std::cout << "inside drop col:\t" << n << " " << std::endl;
-            for (int i = 0; i < n; ++i) {
-                for (int j = 0; j < n; ++j ) {
-                    std::cout << *(out + j*n + i) << "\t" ;
-                }
-                std::cout << std::endl;
-            }
+            // std::cout << "inside drop col:\t" << n << " " << std::endl;
+            // for (int i = 0; i < n; ++i) {
+            //     for (int j = 0; j < n; ++j ) {
+            //         std::cout << *(out + j*n + i) << "\t" ;
+            //     }
+            //     std::cout << std::endl;
+            // }
         }
 
 
