@@ -310,6 +310,28 @@ public:
 
     static int
     gemm(
+        const std::string& transA,
+        const std::string& transB,
+        int m,
+        int n,
+        int k,
+        double alpha,
+        const Scalar* A,
+        int lda,
+        const Scalar* B,
+        int ldb,
+        double beta, 
+        Scalar* C, 
+        int ldc
+    ) noexcept 
+    {
+        return gemm(transA.c_str(), transB.c_str(), m, n, k, 
+            alpha, A, lda, B, ldb, beta, C, ldc);
+    }
+
+
+    static int
+    gemm(
         const char* transA,
         const char* transB,
         int m,

@@ -222,10 +222,10 @@ public:
         const int k = mark_;
         // const int m = qty_.size();
         const std::string side = "L";
-        const std::string trans = "N";
+        const std::string trans = "T";
 
         gsl::span<const int> s = subset_;
-        std::vector<Scalar> aux_work_(n);
+        std::vector<Scalar> aux_work_(m*n);
 
         const Scalar* z_ptr = rz_mat_.ptr(n, n);
         Scalar rss = 0;
@@ -266,48 +266,53 @@ public:
         int beta_front  = 0, prev_front = subset_.front(), prev = subset_.front() - 1, ctr = 0;
         const char transno = 'N';
         for(auto it = subset_.cbegin(); it != subset_.cend(); ++it) {
-            std::cout << "it: " << *it << "; prev: " << prev << std::endl;
-            if(*it != (prev + 1)) {
-                std::cout << "X: " << std::endl;
-                for(int i = 0; i < m; i++) {
-                    for(int j = prev_front; j < prev_front + ctr; j++) {
-                        std::cout << X(i,j) << "\t";
-                    }
-                    std::cout << std::endl;
-                }
+            if(*it != (prev + 1)) {  
                 lapack::gemm(&transno, &transno, m, 1, ctr, -1.0, 
                     X.ptr(0, prev_front), m, betahat.ptr(beta_front, 0), ctr, 1.0, residual.base(), m);
-                std::cout << std::endl << "AFTER: " << ctr << std::endl;
-                for (int j = 0; j < m; j++) {
-                    std::cout << residual(j,0) << " ";
-                }
-                std::cout << std::endl;
-
+            
                 beta_front += ctr; prev_front = prev = *it; ctr = 1;
             } else {++prev; ++ctr;}
 
             if(next(it) == subset_.cend()) {
-                std::cout << "!X: " << std::endl;
-                for(int i = 0; i < m; i++) {
-                    for(int j = prev_front; j < prev_front + ctr; j++) {
-                        std::cout << X(i,j) << "\t";
-                    }
-                    std::cout << std::endl;
-                }
-                std::cout << "Beta: " << beta_front << betahat(beta_front, 0)  << std::endl;
                 lapack::gemm(&transno, &transno, m, 1, ctr, -1.0, 
                     X.ptr(0, prev_front), m, betahat.ptr(beta_front, 0), ctr, 1.0, residual.base(), m);
-                std::cout << std::endl << "AFTER: " << ctr << std::endl;
-                for (int j = 0; j < m; j++) {
-                    std::cout << residual(j,0) << " ";
-                }
-                std::cout << std::endl;
             }
         }
 
         std::cout << std::endl << "res" << std::endl;
         for (int j = 0; j < m; j++) {
             std::cout << residual(j,0) << " ";
+        }
+        std::cout << std::endl;
+
+        matrix residual_mat(m, m);
+        residual_mat = 0;
+        for(int i = 0; i < m; i++) {
+            residual_mat(i, i) = residual(i, 0);
+        }
+
+        // multiply Q^T
+        lapack::ormqr(lapack::left, lapack::trans, m, qrz_->get_qrr(), qrz_->get_tau(), residual_mat, aux_work_);
+        lapack::trtrs(rz_mat_({0, n}, {0, n}), residual_mat);
+        std::cout << "residual_mat" << std::endl;
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                std::cout << residual_mat(i,j) << "\t";
+            }
+            std::cout << std::endl;
+        }
+
+        matrix sds(n, 1);
+        for (int i = 0; i < n; i++) {
+            double tmp = 0; 
+            for (int j = 0; j < m; j++) {
+                tmp += std::pow(residual_mat(i,j), 2.0);
+            }    
+            sds(i, 0) = std::sqrt(tmp);
+        }
+        std::cout << "residual_mat" << std::endl;
+        for (int i = 0; i < n; i++) {
+            std::cout << sds(i, 0) << "\t";
         }
         std::cout << std::endl;
     }
