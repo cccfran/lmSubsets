@@ -238,7 +238,8 @@ public:
         }
 
         std::cout << "dca_node: for_each()" << std::endl;
-        std::cout << "size of rz: (" << rz_mat_.nrow() << ", " << rz_mat_.ncol() << std::endl;
+        std::cout << "size of rz: (" << rz_mat_.nrow() << ", " << rz_mat_.ncol() << ")" << std::endl;
+        std::cout << "mark_ in node: " << k << std::endl;
         // std::cout << "calculating rss: of (size " << n << "):  ";
         // for(auto x : s) std::cout << x << " ";
         // std::cout << std::endl;
@@ -293,8 +294,15 @@ public:
 
         // multiply Q^T
         lapack::ormqr(lapack::left, lapack::trans, m, qrz_->get_qrr(), qrz_->get_tau(), residual_mat, aux_work_);
+        std::cout << "Q^T residual_mat" << std::endl;
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < m; j++) {
+                std::cout << residual_mat(i,j) << "\t";
+            }
+            std::cout << std::endl;
+        }
         lapack::trtrs(rz_mat_({0, n}, {0, n}), residual_mat);
-        std::cout << "residual_mat" << std::endl;
+        std::cout << "residual_mat_hat" << std::endl;
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < m; j++) {
                 std::cout << residual_mat(i,j) << "\t";
@@ -315,8 +323,8 @@ public:
             std::cout << sds(i, 0) << "\t";
         }
         std::cout << std::endl;
-    }
 
+    }
 
 
     void
@@ -334,7 +342,7 @@ public:
         // init next node (result)
         // subset_, mark_, rz_mat_
         // drop k-th
-        // take care of the subset
+        // take care of the subset_
         dca_subset::drop_column(subset_, k, result.subset_);
         result.mark_ = k;
         // drop k-th column of R and Givens rotation

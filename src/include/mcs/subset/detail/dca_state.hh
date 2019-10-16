@@ -157,7 +157,7 @@ public:
     void
     next_node() noexcept
     {
-        // preorder
+        // preorder: rank_inst: L116
         node_xfer_(*nxt_node_, *cur_node_);
         --nxt_node_;
     }
