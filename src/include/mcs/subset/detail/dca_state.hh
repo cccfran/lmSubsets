@@ -111,9 +111,9 @@ public:
         const int k = root_mark_;
         const int p = root_rank_;
 
-        // std::cout << "root size: " << n << std::endl;
-        // std::cout << "root mark: " << k << std::endl;
-        // std::cout << "root rank: " << p << std::endl;
+        std::cout << "root size: " << n << std::endl;
+        std::cout << "root mark: " << k << std::endl;
+        std::cout << "root rank: " << p << std::endl;
 
         // size of the stack
         node_stk_.reserve(p);
@@ -131,7 +131,7 @@ public:
         // pass the tri
         // p+1 because of y
         nxt_node_->root(qrz_.rz(ay_mat)({k, p+1}, {k, p+1}));
-
+        nxt_node_->get_t(root_mark_, qrz_, X_, y_);
 
         root_rss_ = nxt_node_->rss();
 
@@ -203,7 +203,11 @@ public:
         // std::cout << std::endl;
     }
 
-
+    void
+    get_t(const int mark) noexcept
+    {
+        nxt_node_->get_t(mark - root_mark_, qrz_, X_, y_);
+    }
 
     int
     root_size() const noexcept
@@ -305,6 +309,8 @@ public:
     using base::root_rss;
 
     using base::get_cur_node;
+
+    using base::get_t;
 
 
 
@@ -464,6 +470,8 @@ public:
     using base::node_rss;
 
     using base::drop_column;
+
+    using base::get_t;
 
 
 

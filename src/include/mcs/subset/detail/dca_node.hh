@@ -43,6 +43,7 @@
 
 #include "mcs/core/lapack.hh"
 
+#include "mcs/core/model.hh"
 
 namespace mcs    {
 namespace subset {
@@ -68,6 +69,8 @@ class dca_node
 
     using lapack = mcs::core::lapack<Scalar>;
 
+    using model = mcs::core::model<Scalar>;
+
 
 
 private:
@@ -84,10 +87,15 @@ private:
 
     int m;
 
+    std::vector<model> models_;
 
 public:
 
-    matrix rz_mat_;    
+    typename decltype(models_)::iterator cur_model_;
+
+    matrix rz_mat_;
+
+    matrix qt_mat_;
 
     matrix X;
 
@@ -114,13 +122,14 @@ public:
              matrix X_,
              matrix y_) noexcept :
         rz_mat_(root_size + 1, root_size + 1),
+        qt_mat_(root_size + 1, ay_nrow),
         qty_(ay_nrow),
         qrz_(qrz), 
         X(X_),
         y(y_),
         m(ay_nrow)
     {
-        subset_.reserve(root_size);
+        subset_.reserve(root_size);    
     }
 
 
@@ -133,6 +142,8 @@ public:
         subset_.swap(other.subset_);
         std::swap(mark_, other.mark_);
         rz_mat_.swap(other.rz_mat_);
+        qt_mat_.swap(other.qt_mat_);
+        std::cout << "SWAPPPPPPPP" << std::endl;
     }
 
 
@@ -147,7 +158,8 @@ public:
         for (int j = 0; j < n; ++j)  subset_.push_back(j);
         mark_ = 0;
         rz_mat_ = rz_mat;
-
+        qt_mat_ = qrz_->qt();
+        // qt_mat_ = qrz_->get_qt();
         // std::cout << "root of node mark: " << mark_ << std::endl;
         // std::cout << "root of node cols: " << n << std::endl;
     }
@@ -250,82 +262,100 @@ public:
         // matrix_cspan rz_span = rz_mat_({0, n}, {0, n});
         // matrix_cspan qyc = rz_mat_({0, n}, {n, 1});
 
-        matrix_cspan qyc = rz_mat_({0, n}, {n, 1});
+        // matrix_cspan qyc = rz_mat_({0, n}, {n, 1});
 
-        // beta hat
-        matrix betahat(qyc);
-        lapack::trtrs(rz_mat_({0, n}, {0, n}), betahat);
+        // // beta hat
+        // matrix betahat(qyc);
+        // lapack::trtrs(rz_mat_({0, n}, {0, n}), betahat);
 
-        std::cout << "BETA" << std::endl;
-        for(int i = 0; i < n; ++i) {
-            std::cout << betahat(i, 0) << " ";
-        }
-        std::cout << std::endl;
+        // std::cout << "BETA" << std::endl;
+        // for(int i = 0; i < n; ++i) {
+        //     std::cout << betahat(i, 0) << " ";
+        // }
+        // std::cout << std::endl;
 
-        // residual y - Xb
-        matrix residual(y);
-        int beta_front  = 0, prev_front = subset_.front(), prev = subset_.front() - 1, ctr = 0;
-        const char transno = 'N';
-        for(auto it = subset_.cbegin(); it != subset_.cend(); ++it) {
-            if(*it != (prev + 1)) {  
-                lapack::gemm(&transno, &transno, m, 1, ctr, -1.0, 
-                    X.ptr(0, prev_front), m, betahat.ptr(beta_front, 0), ctr, 1.0, residual.base(), m);
+        // // residual y - Xb
+        // matrix residual(y);
+        // int beta_front  = 0, prev_front = subset_.front(), prev = subset_.front() - 1, ctr = 0;
+        // const char transno = 'N';
+        // for(auto it = subset_.cbegin(); it != subset_.cend(); ++it) {
+        //     if(*it != (prev + 1)) {  
+        //         lapack::gemm(&transno, &transno, m, 1, ctr, -1.0, 
+        //             X.ptr(0, prev_front), m, betahat.ptr(beta_front, 0), ctr, 1.0, residual.base(), m);
             
-                beta_front += ctr; prev_front = prev = *it; ctr = 1;
-            } else {++prev; ++ctr;}
+        //         beta_front += ctr; prev_front = prev = *it; ctr = 1;
+        //     } else {++prev; ++ctr;}
 
-            if(next(it) == subset_.cend()) {
-                lapack::gemm(&transno, &transno, m, 1, ctr, -1.0, 
-                    X.ptr(0, prev_front), m, betahat.ptr(beta_front, 0), ctr, 1.0, residual.base(), m);
-            }
-        }
+        //     if(next(it) == subset_.cend()) {
+        //         lapack::gemm(&transno, &transno, m, 1, ctr, -1.0, 
+        //             X.ptr(0, prev_front), m, betahat.ptr(beta_front, 0), ctr, 1.0, residual.base(), m);
+        //     }
+        // }
 
-        std::cout << std::endl << "res" << std::endl;
-        for (int j = 0; j < m; j++) {
-            std::cout << residual(j,0) << " ";
-        }
-        std::cout << std::endl;
+        // std::cout << std::endl << "res" << std::endl;
+        // for (int j = 0; j < m; j++) {
+        //     std::cout << residual(j,0) << " ";
+        // }
+        // std::cout << std::endl;
 
-        matrix residual_mat(m, m);
-        residual_mat = 0;
-        for(int i = 0; i < m; i++) {
-            residual_mat(i, i) = residual(i, 0);
-        }
+        // matrix residual_mat(m, m);
+        // residual_mat = 0;
+        // for(int i = 0; i < m; i++) {
+        //     residual_mat(i, i) = residual(i, 0);
+        // }
 
-        // multiply Q^T
-        lapack::ormqr(lapack::left, lapack::trans, m, qrz_->get_qrr(), qrz_->get_tau(), residual_mat, aux_work_);
-        std::cout << "Q^T residual_mat" << std::endl;
-        for (int i = 0; i < m; i++) {
-            for (int j = 0; j < m; j++) {
-                std::cout << residual_mat(i,j) << "\t";
-            }
-            std::cout << std::endl;
-        }
-        lapack::trtrs(rz_mat_({0, n}, {0, n}), residual_mat);
-        std::cout << "residual_mat_hat" << std::endl;
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < m; j++) {
-                std::cout << residual_mat(i,j) << "\t";
-            }
-            std::cout << std::endl;
-        }
+        // // multiply Q^T
+        // lapack::ormqr(lapack::left, lapack::trans, m, qrz_->get_qrq(), qrz_->get_tau(), residual_mat, aux_work_);
+        // std::cout << "Q^T residual_mat" << std::endl;
+        // for (int i = 0; i < m; i++) {
+        //     for (int j = 0; j < m; j++) {
+        //         std::cout << residual_mat(i,j) << "\t";
+        //     }
+        //     std::cout << std::endl;
+        // }
+        // lapack::trtrs(rz_mat_({0, n}, {0, n}), residual_mat);
+        // std::cout << "residual_mat_hat" << std::endl;
+        // for (int i = 0; i < n; i++) {
+        //     for (int j = 0; j < m; j++) {
+        //         std::cout << residual_mat(i,j) << "\t";
+        //     }
+        //     std::cout << std::endl;
+        // }
 
-        matrix sds(n, 1);
-        for (int i = 0; i < n; i++) {
-            double tmp = 0; 
-            for (int j = 0; j < m; j++) {
-                tmp += std::pow(residual_mat(i,j), 2.0);
-            }    
-            sds(i, 0) = std::sqrt(tmp);
-        }
-        std::cout << "residual_mat" << std::endl;
-        for (int i = 0; i < n; i++) {
-            std::cout << sds(i, 0) << "\t";
-        }
-        std::cout << std::endl;
+        // matrix sds(n, 1);
+        // for (int i = 0; i < n; i++) {
+        //     double tmp = 0; 
+        //     for (int j = 0; j < m; j++) {
+        //         tmp += std::pow(residual_mat(i,j), 2.0);
+        //     }    
+        //     sds(i, 0) = std::sqrt(tmp);
+        // }
+        // std::cout << "residual_mat" << std::endl;
+        // for (int i = 0; i < n; i++) {
+        //     std::cout << sds(i, 0) << "\t";
+        // }
+        // std::cout << std::endl;
 
+        // Givens rotation on Q^T R
+        // rot_q(k, &residual_mat, qrz_);
     }
 
+    // void
+    // rot_q(
+    //     const int mark, 
+    //     matrix* A, 
+    //     const dca_qrz& qrz
+    // ) const noexcept
+    // {
+    //     const int n = size();
+    //     const int k = mark;
+
+    //     matrix_cspan rz_span = rz_mat_({0, n+1}, {0, n+1});
+    //     // drop k-th column of R and Givens rotation
+    //     std::cout << "## NODE: rot q " << mark << std::endl;
+    //     // std::cout << "result.rz_mat_: " << result.rz_mat_.ldim() << std::endl;
+    //     qrz.drop_column(rz_span, k, result.rz_mat_);
+    // } 
 
     void
     drop_column(
@@ -336,8 +366,10 @@ public:
     {
         const int n = size();
         const int k = mark;
+        const int m = qt_mat_.ncol();
 
         matrix_cspan rz_span = rz_mat_({0, n+1}, {0, n+1});
+        matrix_cspan qt_span = qt_mat_({0, n}, {0, m});
 
         // init next node (result)
         // subset_, mark_, rz_mat_
@@ -347,11 +379,163 @@ public:
         result.mark_ = k;
         // drop k-th column of R and Givens rotation
         std::cout << "## NODE: drop column " << mark << std::endl;
-        // std::cout << "result.rz_mat_: " << result.rz_mat_.ldim() << std::endl;
-        qrz.drop_column(rz_span, k, result.rz_mat_);
+        std::cout << "qt_mat_: " << qt_span.ldim() << std::endl;
+        std::cout << "qt_mat_ nrow: " << qt_span.nrow() << std::endl;
+        qrz.drop_column(rz_span, k, result.rz_mat_, qt_span, result.qt_mat_);
+
+        // qrz.drop_column(rz_span, k, result.rz_mat_);
+
     }
 
 
+    void
+    get_t(
+        const int mark,
+        const dca_qrz& qrz,
+        const matrix& X,
+        const matrix& y 
+    ) noexcept
+    {
+        const int n = size();
+        const int m = y.nrow();
+
+        matrix residual(m, 1);
+
+        models_.reserve(n);
+        for(int j = n; j > mark_; j--) {
+            models_.emplace_back(j);
+        }
+        cur_model_ = models_.begin();
+
+        for(int j = n; j > mark_; j--, cur_model_++) {
+            get_beta(j);
+            get_sds(X, y, j);
+        }
+        
+    }
+
+
+    void
+    get_beta(const int model_size) noexcept
+    {   
+        int n = size();
+        int cur_size = 0;
+        matrix betahat(rz_mat_({0, model_size}, {n, 1}));
+        lapack::trtrs(rz_mat_({0, model_size}, {0, model_size}), betahat);
+ 
+        cur_model_->set_beta(betahat);
+        std::cout << "In get_beta(): " << std::endl;
+        for(auto i = subset_.begin(); cur_size < model_size && i != subset_.end(); i++, ++cur_size) {
+            std::cout << *i << "\t";
+        }
+        std::cout << std::endl;
+        for(int i = 0; i < model_size; i++) {
+            std::cout <<  cur_model_->beta()(i,0) << "\t";
+        }
+        // std::cout << std::endl;
+    }
+
+
+    void
+    get_residual(
+        const matrix& X,
+        const matrix& y,
+        matrix& residual_mat,
+        const int model_size
+    )
+    {
+
+        matrix residual(y);
+        int beta_front  = 0, prev_front = subset_.front(), prev = subset_.front() - 1;
+        int cur_size = 0, ctr = 0;
+        const char transno = 'N';
+
+        for(auto it = subset_.cbegin(); cur_size < model_size; ++it, ++cur_size) {
+            if(*it != (prev + 1)) {  
+                lapack::gemm(lapack::no_trans, lapack::no_trans, m, 1, ctr, -1.0, 
+                    X.ptr(0, prev_front), m, cur_model_->beta().ptr(beta_front, 0), ctr, 1.0, residual.base(), m);
+                beta_front += ctr; prev_front = prev = *it; ctr = 1;
+            } else {++prev; ++ctr;}
+
+            if((cur_size + 1) == model_size) {
+                lapack::gemm(lapack::no_trans, lapack::no_trans, m, 1, ctr, -1.0, 
+                    X.ptr(0, prev_front), m, cur_model_->beta().ptr(beta_front, 0), ctr, 1.0, residual.base(), m);
+            }
+        }
+
+        for(int i = 0; i < m; i++) {
+            residual_mat(i, i) = residual(i, 0);
+        }
+
+        std::cout << std::endl << "res" << std::endl;
+        for (int j = 0; j < m; j++) {
+            std::cout << residual(j, 0) << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    void
+    get_sds(
+        const matrix& X,
+        const matrix& y,
+        const int model_size
+    ) noexcept
+    {   
+        const int m = y.nrow();
+
+        matrix residual_mat(m, m);
+        matrix qtr(m, m);
+        matrix sds(model_size, 1);
+        
+        qtr = 0;        
+        residual_mat = 0;
+        get_residual(X, y, residual_mat, model_size);
+
+        std::cout << "Q^T" << std::endl;
+        for (int i = 0; i < qt_mat_.ldim(); i++) {
+            for (int j = 0; j < m; j++) {
+                std::cout << qt_mat_(i,j) << "\t";
+            }
+            std::cout << std::endl;
+        }
+
+        // multiply Q^T R
+        // lapack::ormqr(lapack::left, lapack::trans, m, qrz_->get_qrr(), qrz_->get_tau(), residual_mat, aux_work_);
+        // lapack::gemm(lapack::no_trans, lapack::no_trans, model_size, m, m, 1.0, 
+        //             qt_mat_.base(), m, residual_mat.base(), m, 0.0, qtr.base(), m);
+        lapack::gemm(lapack::no_trans, lapack::no_trans, 1.0, qt_mat_, residual_mat, 0.0, qtr);
+        std::cout << "Q^T residual_mat" << std::endl;
+        for (int i = 0; i < model_size; i++) {
+            for (int j = 0; j < m; j++) {
+                std::cout << qtr(i,j) << "\t";
+            }
+            std::cout << std::endl;
+        }
+        lapack::trtrs(rz_mat_({0, model_size}, {0, model_size}), qtr);
+        std::cout << "residual_mat_hat" << std::endl;
+        for (int i = 0; i < model_size; i++) {
+            for (int j = 0; j < m; j++) {
+                std::cout << qtr(i,j) << "\t";
+            }
+            std::cout << std::endl;
+        }
+
+        for (int i = 0; i < model_size; i++) {
+            double tmp = 0; 
+            for (int j = 0; j < m; j++) {
+                tmp += std::pow(qtr(i,j), 2.0);
+            }    
+            sds(i, 0) = std::sqrt(tmp);
+        }
+
+        std::cout << "sd" << std::endl;
+        for (int i = 0; i < model_size; i++) {
+            std::cout << sds(i, 0) << "\t";
+        }
+        std::cout << std::endl;
+
+        cur_model_->set_sds(sds);
+    }
 
     void
     preorder_complete(

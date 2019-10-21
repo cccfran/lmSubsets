@@ -128,6 +128,38 @@ public:
     }
 
 
+    static void
+    zero(
+        const int n,
+        const Scalar* const x,
+        const int incx,
+        const Scalar* const y,
+        const int incy,
+        Scalar* const xx,
+        const int incxx,
+        Scalar* const yy,
+        const int incyy, 
+        const Scalar* const q1,
+        const Scalar* const q2,
+        Scalar* const qq1,
+        Scalar* const qq2,
+        const int incq,
+        const int m
+    ) noexcept
+    {
+        if (n > 0)
+        {
+            const givens g(*x, *y);
+            g.rot(n - 1, x + incx, incx, y + incy, incy, xx + incxx, incxx,
+                  yy + incyy, incyy);
+            g.rot(m, q1, incq, q2, incq, qq1, incq, qq2, incq);
+
+            *xx = g.r_;
+            *yy = 0;
+        }
+    }
+
+
 
 private:
 

@@ -196,14 +196,14 @@ public:
     orgqr(
         const int k,
         matrix_span a,
-        vector_cspan tau,
-        gsl::span<Scalar> work
+        std::vector<Scalar> tau,
+        std::vector<Scalar> work
     ) noexcept
     {
         const int m = a.nrow();
         const int n = a.ncol();
 
-        return orgqr(m, n, k, a.base(), a.ldim(), tau.base(), work.data(),
+        return orgqr(m, n, k, a.base(), a.ldim(), tau.data(), work.data(),
                      work.size());
     }
 
@@ -293,6 +293,21 @@ public:
         return trtrs(&uplo, &trans, &diag, d, dy, a.base(), a.ldim(), b.base(), b.ldim());
     }
 
+    static int
+    trtrs(
+        const std::string& uplo,
+        const std::string& trans,
+        const std::string& diag,
+        matrix_cspan a,
+        matrix_span b
+    ) noexcept
+    {
+        const int n = a.nrow();
+        const int d = a.ncol();
+        const int dy = b.ncol();
+        
+        return trtrs(uplo.c_str(), trans.c_str(), diag.c_str(), d, dy, a.base(), a.ldim(), b.base(), b.ldim());
+    }
 
     static int
     trtrs(
@@ -329,6 +344,25 @@ public:
             alpha, A, lda, B, ldb, beta, C, ldc);
     }
 
+
+    static int
+    gemm(
+        const std::string& transA,
+        const std::string& transB,
+        double alpha,
+        matrix_cspan A,
+        matrix_cspan B,
+        double beta, 
+        matrix_span C
+    ) noexcept 
+    {
+        const int m = A.nrow();
+        const int n = B.ncol();
+        const int k = A.ncol();
+
+        return gemm(transA.c_str(), transB.c_str(), m, n, k, 
+            alpha, A.base(), A.ldim(), B.base(), B.ldim(), beta, C.base(), C.ldim());
+    }
 
     static int
     gemm(
