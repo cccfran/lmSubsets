@@ -78,7 +78,7 @@ public:
     {
         return model_size;
     }
-    
+
     const matrix&
     beta() const noexcept
     {
@@ -101,6 +101,17 @@ public:
     tstat() const noexcept
     {
         return tstat_;
+    }
+
+    const double
+    maxt() const noexcept
+    {
+        double maxt = 0;
+        for(int i = 0; i < model_size; i++) {
+            double tmp = std::abs(beta_(i, 0) / sds_(i, 0));
+            if(tmp > maxt) maxt = tmp;
+        }
+        return maxt;
     }
 
     void 

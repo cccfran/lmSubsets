@@ -75,7 +75,7 @@ class dca_node
 
 private:
 
-    std::vector<int> subset_;
+    
 
     int mark_;
 
@@ -86,6 +86,8 @@ private:
     dca_qrz* qrz_;
 
     int m;
+
+    std::vector<int> subset_;
 
     std::vector<model> models_;
 
@@ -130,6 +132,7 @@ public:
         m(ay_nrow)
     {
         subset_.reserve(root_size);    
+        models_.reserve(root_size);
     }
 
 
@@ -143,6 +146,7 @@ public:
         std::swap(mark_, other.mark_);
         rz_mat_.swap(other.rz_mat_);
         qt_mat_.swap(other.qt_mat_);
+        std::swap(models_, other.models_);
         std::cout << "SWAPPPPPPPP" << std::endl;
     }
 
@@ -232,130 +236,31 @@ public:
         // get all rss of submodel in this node
         const int n = size();
         const int k = mark_;
-        // const int m = qty_.size();
-        const std::string side = "L";
-        const std::string trans = "T";
 
         gsl::span<const int> s = subset_;
-        std::vector<Scalar> aux_work_(m*n);
 
         const Scalar* z_ptr = rz_mat_.ptr(n, n);
         Scalar rss = 0;
-
-        for (int j = n; j > k; --j, --z_ptr)
+        // typename std::vector<model>::const_iterator model_ptr = models_.begin();
+        auto model_ptr = models_.begin();
+        
+        for (int j = n; j > k; --j, model_ptr++)
+        // for (int j = n; j > k; --j, --z_ptr)
         {
-            rss += std::pow(*z_ptr, 2);
+            // rss += std::pow(*z_ptr, 2);
+            // f(s.first(j), rss);
+            std::cout << "model size: " << model_ptr->size() << std::endl;
+            std::cout << "maxt: " << model_ptr->maxt() << std::endl;
 
-            f(s.first(j), rss);
+            f(s.first(j), model_ptr->maxt());
         }
 
         std::cout << "dca_node: for_each()" << std::endl;
         std::cout << "size of rz: (" << rz_mat_.nrow() << ", " << rz_mat_.ncol() << ")" << std::endl;
         std::cout << "mark_ in node: " << k << std::endl;
-        // std::cout << "calculating rss: of (size " << n << "):  ";
-        // for(auto x : s) std::cout << x << " ";
-        // std::cout << std::endl;
 
-        // lapack::trtrs(rz_mat_({0, n-1}, {0, n-1}), rz_mat_({0, n-1}, {n, n}));
-        // for(auto x : rz_mat_({0, n-1}, {0, n-1})) std::cout << x << " ";
-        //     std::cout << std::endl;
-        // matrix_cspan rz_span = rz_mat_({0, n}, {0, n});
-        // matrix_cspan qyc = rz_mat_({0, n}, {n, 1});
-
-        // matrix_cspan qyc = rz_mat_({0, n}, {n, 1});
-
-        // // beta hat
-        // matrix betahat(qyc);
-        // lapack::trtrs(rz_mat_({0, n}, {0, n}), betahat);
-
-        // std::cout << "BETA" << std::endl;
-        // for(int i = 0; i < n; ++i) {
-        //     std::cout << betahat(i, 0) << " ";
-        // }
-        // std::cout << std::endl;
-
-        // // residual y - Xb
-        // matrix residual(y);
-        // int beta_front  = 0, prev_front = subset_.front(), prev = subset_.front() - 1, ctr = 0;
-        // const char transno = 'N';
-        // for(auto it = subset_.cbegin(); it != subset_.cend(); ++it) {
-        //     if(*it != (prev + 1)) {  
-        //         lapack::gemm(&transno, &transno, m, 1, ctr, -1.0, 
-        //             X.ptr(0, prev_front), m, betahat.ptr(beta_front, 0), ctr, 1.0, residual.base(), m);
-            
-        //         beta_front += ctr; prev_front = prev = *it; ctr = 1;
-        //     } else {++prev; ++ctr;}
-
-        //     if(next(it) == subset_.cend()) {
-        //         lapack::gemm(&transno, &transno, m, 1, ctr, -1.0, 
-        //             X.ptr(0, prev_front), m, betahat.ptr(beta_front, 0), ctr, 1.0, residual.base(), m);
-        //     }
-        // }
-
-        // std::cout << std::endl << "res" << std::endl;
-        // for (int j = 0; j < m; j++) {
-        //     std::cout << residual(j,0) << " ";
-        // }
-        // std::cout << std::endl;
-
-        // matrix residual_mat(m, m);
-        // residual_mat = 0;
-        // for(int i = 0; i < m; i++) {
-        //     residual_mat(i, i) = residual(i, 0);
-        // }
-
-        // // multiply Q^T
-        // lapack::ormqr(lapack::left, lapack::trans, m, qrz_->get_qrq(), qrz_->get_tau(), residual_mat, aux_work_);
-        // std::cout << "Q^T residual_mat" << std::endl;
-        // for (int i = 0; i < m; i++) {
-        //     for (int j = 0; j < m; j++) {
-        //         std::cout << residual_mat(i,j) << "\t";
-        //     }
-        //     std::cout << std::endl;
-        // }
-        // lapack::trtrs(rz_mat_({0, n}, {0, n}), residual_mat);
-        // std::cout << "residual_mat_hat" << std::endl;
-        // for (int i = 0; i < n; i++) {
-        //     for (int j = 0; j < m; j++) {
-        //         std::cout << residual_mat(i,j) << "\t";
-        //     }
-        //     std::cout << std::endl;
-        // }
-
-        // matrix sds(n, 1);
-        // for (int i = 0; i < n; i++) {
-        //     double tmp = 0; 
-        //     for (int j = 0; j < m; j++) {
-        //         tmp += std::pow(residual_mat(i,j), 2.0);
-        //     }    
-        //     sds(i, 0) = std::sqrt(tmp);
-        // }
-        // std::cout << "residual_mat" << std::endl;
-        // for (int i = 0; i < n; i++) {
-        //     std::cout << sds(i, 0) << "\t";
-        // }
-        // std::cout << std::endl;
-
-        // Givens rotation on Q^T R
-        // rot_q(k, &residual_mat, qrz_);
     }
 
-    // void
-    // rot_q(
-    //     const int mark, 
-    //     matrix* A, 
-    //     const dca_qrz& qrz
-    // ) const noexcept
-    // {
-    //     const int n = size();
-    //     const int k = mark;
-
-    //     matrix_cspan rz_span = rz_mat_({0, n+1}, {0, n+1});
-    //     // drop k-th column of R and Givens rotation
-    //     std::cout << "## NODE: rot q " << mark << std::endl;
-    //     // std::cout << "result.rz_mat_: " << result.rz_mat_.ldim() << std::endl;
-    //     qrz.drop_column(rz_span, k, result.rz_mat_);
-    // } 
 
     void
     drop_column(
@@ -401,7 +306,7 @@ public:
 
         matrix residual(m, 1);
 
-        models_.reserve(n);
+        // models_.reserve(n);
         for(int j = n; j > mark_; j--) {
             models_.emplace_back(j);
         }
@@ -411,7 +316,6 @@ public:
             get_beta(j);
             get_sds(X, y, j);
         }
-        
     }
 
 

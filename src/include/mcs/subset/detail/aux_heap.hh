@@ -64,6 +64,7 @@ private:
 
     std::function<bool(int,int)> heap_comp_;
 
+    // keys is the RSS
     std::vector<Scalar> keys_;
 
     std::vector<std::vector<int>> subsets_;
@@ -76,14 +77,14 @@ public:
         const int root_size,
         const int nbest
     ) noexcept :
-        max_key_(std::numeric_limits<Scalar>::max()),
+        max_key_(std::numeric_limits<Scalar>::min()),
         min_key_(max_key_),
         heap_comp_(
             [this](
                 const int i,
                 const int j
             ) -> bool {
-                return keys_[i] < keys_[j];
+                return keys_[i] > keys_[j];
             }
         )
     {
@@ -133,12 +134,12 @@ public:
 
         std::push_heap(heap_.begin(), heap_.end(), heap_comp_);
 
-        if (key < min_key_)
+        if (key > max_key_)
         {
-            min_key_ = key;
+            max_key_ = key;
         }
 
-        max_key_ = keys_[heap_.front()];
+        min_key_ = keys_[heap_.front()];
     }
 
 

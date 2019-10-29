@@ -71,7 +71,7 @@ public:
     ) noexcept
     {
         heaps_.reserve(root_size);
-        std::cout << "HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHeap" << root_size << std::endl;
+        std::cout << "HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHeap: " << root_size << std::endl;
         for (int size = 1; size <= root_size; ++size)
         {
             heaps_.emplace_back(size, nbest);
@@ -93,17 +93,31 @@ public:
     void
     update(const dca_node& node) noexcept
     {
+        // node.for_each(
+        //     [this](
+        //         gsl::span<const int> subset,
+        //         const Scalar rss
+        //     ) -> void {
+        //         const int size = subset.size();
+
+        //         auto& heap = heaps_[size - 1];
+        //         if (rss < heap.max_key())
+        //         {
+        //             heap.insert(subset, rss);
+        //         }
+        //     });
+
         node.for_each(
             [this](
                 gsl::span<const int> subset,
-                const Scalar rss
+                const Scalar maxt
             ) -> void {
                 const int size = subset.size();
 
                 auto& heap = heaps_[size - 1];
-                if (rss < heap.max_key())
+                if (maxt > heap.min_key())
                 {
-                    heap.insert(subset, rss);
+                    heap.insert(subset, maxt);
                 }
             });
     }

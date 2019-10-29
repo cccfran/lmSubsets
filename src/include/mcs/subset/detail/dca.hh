@@ -41,6 +41,7 @@ dca_impl(DcaState& state) noexcept
         // lots of things done
         // first preorder
         // then partial update
+        
         state.next_node();
 
         const int n = state.node_size();
@@ -57,7 +58,7 @@ dca_impl(DcaState& state) noexcept
             }
         std::cout << std::endl;
 
-        std::cout << "QRZ: " << std::endl;
+        std::cout << "node: QRZ: " << std::endl;
         for (int i = 0; i < state.get_cur_node()->rz_mat_.nrow(); ++i) {
             for (int j = 0; j < state.get_cur_node()->rz_mat_.ncol(); ++j) {
                 std::cout << state.get_cur_node()->rz_mat_(i, j) << " ";
@@ -72,6 +73,7 @@ dca_impl(DcaState& state) noexcept
             std::cout << "dropping " << j << std::endl;
 
             state.drop_column(j);
+            state.get_t(j);
         }
 
         // std::cout << std::endl;
