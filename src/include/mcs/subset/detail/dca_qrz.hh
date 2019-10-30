@@ -105,42 +105,42 @@ public:
         lapack::geqr2(rz_tmp, aux_tau_, aux_work_);
         qrq = rz_tmp({0, m}, {0, n});
 
-        std::cout << "dca_qrz: rz()" << std::endl;
-        std::cout << "Checkthings ********************" << std::endl;
+        // std::cout << "dca_qrz: rz()" << std::endl;
+        // std::cout << "Checkthings ********************" << std::endl;
         for(int i = 0; i < m; ++i) {
             qty_(i,0) = ay_mat(i, n);
-            if (i < 10) std::cout << qty_(i,0) << " ";
+            // if (i < 10) std::cout << qty_(i,0) << " ";
         }
-        std::cout << std::endl;
+        // std::cout << std::endl;
 
-        std::cout << "QR matrix ********************" << std::endl;
-        for(int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++) {
-                std::cout << qrq(i, j) << " ";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
+        // std::cout << "QR matrix ********************" << std::endl;
+        // for(int i = 0; i < m; i++) {
+        //     for (int j = 0; j < n; j++) {
+        //         std::cout << qrq(i, j) << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
+        // std::cout << std::endl;
 
         lapack::orgqr(n, qrq, aux_tau_, aux_work_);
 
-        std::cout << "Q matrix ********************" << std::endl;
-        for(int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++) {
-                std::cout << qrq(i, j) << " ";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
+        // std::cout << "Q matrix ********************" << std::endl;
+        // for(int i = 0; i < m; i++) {
+        //     for (int j = 0; j < n; j++) {
+        //         std::cout << qrq(i, j) << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
+        // std::cout << std::endl;
 
         // lapack::ormqr(side, trans, m, qrq, aux_tau_, qty_, aux_work_);
         lapack::gemm(lapack::trans, lapack::no_trans, 1.0, qrq, qty_, 0.0, qty_);
 
-        std::cout << "QTy ********************" << std::endl;
-        for(int i = 0; i < m; ++i) {
-            std::cout << qty_(i,0) << " ";
-        }
-        std::cout << std::endl;
+        // std::cout << "QTy ********************" << std::endl;
+        // for(int i = 0; i < m; ++i) {
+        //     std::cout << qty_(i,0) << " ";
+        // }
+        // std::cout << std::endl;
 
 
         return rz_tmp({0, n + 1}, {0, n + 1});
@@ -238,14 +238,14 @@ public:
         const int k = mark;
 
         
-        std::cout << "### QRZ_: drop column public " << k << std::endl;
-        // std::cout << "### rz_mat: (" << k << ", " << k << "): " << rz_mat(k, k) << std::endl;
-        for (int i = 0; i < rz_mat.nrow(); ++i) {
-            for (int j = 0; j < rz_mat.ncol(); ++j ) {
-                std::cout << *(rz_mat.ptr(i, j)) << "\t" ;
-            }
-            std::cout << std::endl;
-        }
+        // std::cout << "### QRZ_: drop column public " << k << std::endl;
+        // // std::cout << "### rz_mat: (" << k << ", " << k << "): " << rz_mat(k, k) << std::endl;
+        // for (int i = 0; i < rz_mat.nrow(); ++i) {
+        //     for (int j = 0; j < rz_mat.ncol(); ++j ) {
+        //         std::cout << *(rz_mat.ptr(i, j)) << "\t" ;
+        //     }
+        //     std::cout << std::endl;
+        // }
         // std::cout << "### result.rz_mat_: " << out_mat.ldim() << std::endl;
         // for (int i = 0; i < out_mat.nrow(); ++i) {
         //     for (int j = 0; j < out_mat.ncol(); ++j ) {
@@ -264,13 +264,13 @@ public:
             }
         }
 
-        std::cout << "### result.rz_mat_: " << out_mat.ldim() << std::endl;
-        for (int i = 0; i < out_mat.nrow(); ++i) {
-            for (int j = 0; j < out_mat.ncol(); ++j ) {
-                std::cout << *(out_mat.ptr(i, j)) << "\t" ;
-            }
-            std::cout << std::endl;
-        }
+        // std::cout << "### result.rz_mat_: " << out_mat.ldim() << std::endl;
+        // for (int i = 0; i < out_mat.nrow(); ++i) {
+        //     for (int j = 0; j < out_mat.ncol(); ++j ) {
+        //         std::cout << *(out_mat.ptr(i, j)) << "\t" ;
+        //     }
+        //     std::cout << std::endl;
+        // }
     }
 
 
@@ -287,27 +287,27 @@ public:
         const int k = mark;
 
         
-        std::cout << "### QRZ_: drop column public " << k << " ;n: " << n << std::endl;
+        // std::cout << "### QRZ_: drop column public " << k << " ;n: " << n << std::endl;
         // std::cout << "### rz_mat: (" << k << ", " << k << "): " << rz_mat(k, k) << std::endl;
-        for (int i = 0; i < rz_mat.nrow(); ++i) {
-            for (int j = 0; j < rz_mat.ncol(); ++j ) {
-                std::cout << *(rz_mat.ptr(i, j)) << "\t" ;
-            }
-            std::cout << std::endl;
-        }
+        // for (int i = 0; i < rz_mat.nrow(); ++i) {
+        //     for (int j = 0; j < rz_mat.ncol(); ++j ) {
+        //         std::cout << *(rz_mat.ptr(i, j)) << "\t" ;
+        //     }
+        //     std::cout << std::endl;
+        // }
 
-        std::cout << "### qt_mat ldim: " << qt_mat.ldim() << std::endl;
-        std::cout << "### qt_mat nrow: " << qt_mat.nrow() << std::endl;
-        std::cout << "### qt_out_mat ldim: " << qt_out_mat.ldim() << std::endl;
-        std::cout << "### qt_out_mat nrow: " << qt_out_mat.nrow() << std::endl;
+        // std::cout << "### qt_mat ldim: " << qt_mat.ldim() << std::endl;
+        // std::cout << "### qt_mat nrow: " << qt_mat.nrow() << std::endl;
+        // std::cout << "### qt_out_mat ldim: " << qt_out_mat.ldim() << std::endl;
+        // std::cout << "### qt_out_mat nrow: " << qt_out_mat.nrow() << std::endl;
 
-        std::cout << "### qt_mat_: " << std::endl;
-        for (int i = 0; i < qt_mat.nrow(); ++i) {
-            for (int j = 0; j < qt_mat.ncol(); ++j ) {
-                std::cout << *(qt_mat.ptr(i, j)) << "\t" ;
-            }
-            std::cout << std::endl;
-        }
+        // std::cout << "### qt_mat_: " << std::endl;
+        // for (int i = 0; i < qt_mat.nrow(); ++i) {
+        //     for (int j = 0; j < qt_mat.ncol(); ++j ) {
+        //         std::cout << *(qt_mat.ptr(i, j)) << "\t" ;
+        //     }
+        //     std::cout << std::endl;
+        // }
 
         drop_column(n - k, rz_mat.ptr(k, k), rz_mat.ldim(), 
                     out_mat.ptr(k, k), out_mat.ldim(), 
@@ -326,21 +326,21 @@ public:
             }
         }
 
-        std::cout << "### result.qt_out_mat_: " << std::endl;
-        for (int i = 0; i < qt_out_mat.nrow(); ++i) {
-            for (int j = 0; j < qt_out_mat.ncol(); ++j ) {
-                std::cout << *(qt_out_mat.ptr(i, j)) << "\t" ;
-            }
-            std::cout << std::endl;
-        }
+        // std::cout << "### result.qt_out_mat_: " << std::endl;
+        // for (int i = 0; i < qt_out_mat.nrow(); ++i) {
+        //     for (int j = 0; j < qt_out_mat.ncol(); ++j ) {
+        //         std::cout << *(qt_out_mat.ptr(i, j)) << "\t" ;
+        //     }
+        //     std::cout << std::endl;
+        // }
 
-        std::cout << "### result.rz_mat_: " << out_mat.ldim() << std::endl;
-        for (int i = 0; i < out_mat.nrow(); ++i) {
-            for (int j = 0; j < out_mat.ncol(); ++j ) {
-                std::cout << *(out_mat.ptr(i, j)) << "\t" ;
-            }
-            std::cout << std::endl;
-        }
+        // std::cout << "### result.rz_mat_: " << out_mat.ldim() << std::endl;
+        // for (int i = 0; i < out_mat.nrow(); ++i) {
+        //     for (int j = 0; j < out_mat.ncol(); ++j ) {
+        //         std::cout << *(out_mat.ptr(i, j)) << "\t" ;
+        //     }
+        //     std::cout << std::endl;
+        // }
     }
 
 
@@ -435,7 +435,7 @@ private:
         const int m
     ) noexcept
     {
-        std::cout << n << std::endl;
+        // std::cout << n << std::endl;
         givens::zero(n, rz + ldrz, ldrz, rz + ldrz + 1, ldrz, out, ldout,
                      out + 1, ldout, qt, qt + 1, qt_out, qt_out + 1, ldqt, m);
 
@@ -448,7 +448,7 @@ private:
             qt++;
             qt_out++;
 
-            std::cout << n << std::endl;
+            // std::cout << n << std::endl;
             if(n == 1) {
                 givens::zero(n, out, ldout, rz + ldrz + 1, ldrz, out, ldout,
                          out + 1, ldout);

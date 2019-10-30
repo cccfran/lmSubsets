@@ -47,30 +47,30 @@ dca_impl(DcaState& state) noexcept
         const int n = state.node_size();
         const int k = state.node_mark();
 
-        std::cout << "***********************" << std::endl;
-        std::cout << "** node_cnt: " << node_cnt << std::endl;
-        std::cout << "node_size: " << n << std::endl;
-        std::cout << "marker: " << k << std::endl;
-        std::cout << "Subsets: ";
-        for(auto it=state.get_cur_node()->subset().cbegin();
-            it != state.get_cur_node()->subset().cend(); ++it) {
-                std::cout << *it << " ";
-            }
-        std::cout << std::endl;
+        // std::cout << "***********************" << std::endl;
+        // std::cout << "** node_cnt: " << node_cnt << std::endl;
+        // std::cout << "node_size: " << n << std::endl;
+        // std::cout << "marker: " << k << std::endl;
+        // std::cout << "Subsets: ";
+        // for(auto it=state.get_cur_node()->subset().cbegin();
+        //     it != state.get_cur_node()->subset().cend(); ++it) {
+        //         std::cout << *it << " ";
+        //     }
+        // std::cout << std::endl;
 
-        std::cout << "node: QRZ: " << std::endl;
-        for (int i = 0; i < state.get_cur_node()->rz_mat_.nrow(); ++i) {
-            for (int j = 0; j < state.get_cur_node()->rz_mat_.ncol(); ++j) {
-                std::cout << state.get_cur_node()->rz_mat_(i, j) << " ";
-            }
-            std::cout << std::endl;
-        }
+        // std::cout << "node: QRZ: " << std::endl;
+        // for (int i = 0; i < state.get_cur_node()->rz_mat_.nrow(); ++i) {
+        //     for (int j = 0; j < state.get_cur_node()->rz_mat_.ncol(); ++j) {
+        //         std::cout << state.get_cur_node()->rz_mat_(i, j) << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
 
         // drop k+1 to n-1 columns to sub 
         for (int j = k; j < n - 1; ++j)
         {
-            std::cout << "######################" << std::endl;
-            std::cout << "dropping " << j << std::endl;
+            // std::cout << "######################" << std::endl;
+            // std::cout << "dropping " << j << std::endl;
 
             state.drop_column(j);
             state.get_t(j);

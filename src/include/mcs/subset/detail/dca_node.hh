@@ -148,7 +148,7 @@ public:
         qt_mat_.swap(other.qt_mat_);
         std::swap(models_, other.models_);
         std::swap(cur_model_, other.cur_model_);
-        std::cout << "SWAPPPPPPPP" << std::endl;
+        // std::cout << "SWAPPPPPPPP" << std::endl;
     }
 
 
@@ -250,15 +250,15 @@ public:
         {
             // rss += std::pow(*z_ptr, 2);
             // f(s.first(j), rss);
-            std::cout << "model size: " << model_ptr->size() << std::endl;
-            std::cout << "maxt: " << model_ptr->maxt() << std::endl;
+            // std::cout << "model size: " << model_ptr->size() << std::endl;
+            // std::cout << "maxt: " << model_ptr->maxt() << std::endl;
 
             f(s.first(j), model_ptr->maxt());
         }
 
-        std::cout << "dca_node: for_each()" << std::endl;
-        std::cout << "size of rz: (" << rz_mat_.nrow() << ", " << rz_mat_.ncol() << ")" << std::endl;
-        std::cout << "mark_ in node: " << k << std::endl;
+        // std::cout << "dca_node: for_each()" << std::endl;
+        // std::cout << "size of rz: (" << rz_mat_.nrow() << ", " << rz_mat_.ncol() << ")" << std::endl;
+        // std::cout << "mark_ in node: " << k << std::endl;
 
     }
 
@@ -284,9 +284,9 @@ public:
         dca_subset::drop_column(subset_, k, result.subset_);
         result.mark_ = k;
         // drop k-th column of R and Givens rotation
-        std::cout << "## NODE: drop column " << mark << std::endl;
-        std::cout << "qt_mat_: " << qt_span.ldim() << std::endl;
-        std::cout << "qt_mat_ nrow: " << qt_span.nrow() << std::endl;
+        // std::cout << "## NODE: drop column " << mark << std::endl;
+        // std::cout << "qt_mat_: " << qt_span.ldim() << std::endl;
+        // std::cout << "qt_mat_ nrow: " << qt_span.nrow() << std::endl;
         qrz.drop_column(rz_span, k, result.rz_mat_, qt_span, result.qt_mat_);
 
         // qrz.drop_column(rz_span, k, result.rz_mat_);
@@ -330,14 +330,14 @@ public:
         lapack::trtrs(rz_mat_({0, model_size}, {0, model_size}), betahat);
  
         cur_model_->set_beta(betahat);
-        std::cout << "In get_beta(): " << std::endl;
-        for(auto i = subset_.begin(); cur_size < model_size && i != subset_.end(); i++, ++cur_size) {
-            std::cout << *i << "\t";
-        }
-        std::cout << std::endl;
-        for(int i = 0; i < model_size; i++) {
-            std::cout <<  cur_model_->beta()(i,0) << "\t";
-        }
+        // std::cout << "In get_beta(): " << std::endl;
+        // for(auto i = subset_.begin(); cur_size < model_size && i != subset_.end(); i++, ++cur_size) {
+        //     std::cout << *i << "\t";
+        // }
+        // std::cout << std::endl;
+        // for(int i = 0; i < model_size; i++) {
+        //     std::cout <<  cur_model_->beta()(i,0) << "\t";
+        // }
         // std::cout << std::endl;
     }
 
@@ -373,11 +373,11 @@ public:
             residual_mat(i, i) = residual(i, 0);
         }
 
-        std::cout << std::endl << "res" << std::endl;
-        for (int j = 0; j < m; j++) {
-            std::cout << residual(j, 0) << " ";
-        }
-        std::cout << std::endl;
+        // std::cout << std::endl << "res" << std::endl;
+        // for (int j = 0; j < m; j++) {
+        //     std::cout << residual(j, 0) << " ";
+        // }
+        // std::cout << std::endl;
     }
 
     void
@@ -397,34 +397,34 @@ public:
         residual_mat = 0;
         get_residual(X, y, residual_mat, model_size);
 
-        std::cout << "Q^T" << std::endl;
-        for (int i = 0; i < qt_mat_.ldim(); i++) {
-            for (int j = 0; j < m; j++) {
-                std::cout << qt_mat_(i,j) << "\t";
-            }
-            std::cout << std::endl;
-        }
+        // std::cout << "Q^T" << std::endl;
+        // for (int i = 0; i < qt_mat_.ldim(); i++) {
+        //     for (int j = 0; j < m; j++) {
+        //         std::cout << qt_mat_(i,j) << "\t";
+        //     }
+        //     std::cout << std::endl;
+        // }
 
         // multiply Q^T R
         // lapack::ormqr(lapack::left, lapack::trans, m, qrz_->get_qrr(), qrz_->get_tau(), residual_mat, aux_work_);
         // lapack::gemm(lapack::no_trans, lapack::no_trans, model_size, m, m, 1.0, 
         //             qt_mat_.base(), m, residual_mat.base(), m, 0.0, qtr.base(), m);
         lapack::gemm(lapack::no_trans, lapack::no_trans, 1.0, qt_mat_, residual_mat, 0.0, qtr);
-        std::cout << "Q^T residual_mat" << std::endl;
-        for (int i = 0; i < model_size; i++) {
-            for (int j = 0; j < m; j++) {
-                std::cout << qtr(i,j) << "\t";
-            }
-            std::cout << std::endl;
-        }
+        // std::cout << "Q^T residual_mat" << std::endl;
+        // for (int i = 0; i < model_size; i++) {
+        //     for (int j = 0; j < m; j++) {
+        //         std::cout << qtr(i,j) << "\t";
+        //     }
+        //     std::cout << std::endl;
+        // }
         lapack::trtrs(rz_mat_({0, model_size}, {0, model_size}), qtr);
-        std::cout << "residual_mat_hat" << std::endl;
-        for (int i = 0; i < model_size; i++) {
-            for (int j = 0; j < m; j++) {
-                std::cout << qtr(i,j) << "\t";
-            }
-            std::cout << std::endl;
-        }
+        // std::cout << "residual_mat_hat" << std::endl;
+        // for (int i = 0; i < model_size; i++) {
+        //     for (int j = 0; j < m; j++) {
+        //         std::cout << qtr(i,j) << "\t";
+        //     }
+        //     std::cout << std::endl;
+        // }
 
         for (int i = 0; i < model_size; i++) {
             double tmp = 0; 
@@ -434,11 +434,11 @@ public:
             sds(i, 0) = std::sqrt(tmp);
         }
 
-        std::cout << "sd" << std::endl;
-        for (int i = 0; i < model_size; i++) {
-            std::cout << sds(i, 0) << "\t";
-        }
-        std::cout << std::endl;
+        // std::cout << "sd" << std::endl;
+        // for (int i = 0; i < model_size; i++) {
+        //     std::cout << sds(i, 0) << "\t";
+        // }
+        // std::cout << std::endl;
 
         cur_model_->set_sds(sds);
     }

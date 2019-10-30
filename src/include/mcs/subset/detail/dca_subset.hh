@@ -62,9 +62,9 @@ public:
         result.assign(first, skip);
         result.insert(result.end(), skip + 1, last);
 
-        std::cout << "\t dca_subset: DROP COLUMN():" << std::endl;
-        for(auto i : result) std::cout << i << " ";
-        std::cout << std::endl;
+        // std::cout << "\t dca_subset: DROP COLUMN():" << std::endl;
+        // for(auto i : result) std::cout << i << " ";
+        // std::cout << std::endl;
     }
 
 

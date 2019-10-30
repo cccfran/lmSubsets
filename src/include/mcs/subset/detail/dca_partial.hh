@@ -71,7 +71,7 @@ public:
     ) noexcept
     {
         heaps_.reserve(root_size);
-        std::cout << "HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHeap: " << root_size << std::endl;
+        // std::cout << "HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHeap: " << root_size << std::endl;
         for (int size = 1; size <= root_size; ++size)
         {
             heaps_.emplace_back(size, nbest);
