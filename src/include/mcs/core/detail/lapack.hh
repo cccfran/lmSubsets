@@ -360,6 +360,10 @@ public:
         const int n = B.ncol();
         const int k = A.ncol();
 
+        // std::cout << "gemm m: " << m << std::endl;
+        // std::cout << "gemm n: " << n << std::endl;
+        // std::cout << "gemm k: " << k << std::endl;
+
         return gemm(transA.c_str(), transB.c_str(), m, n, k, 
             alpha, A.base(), A.ldim(), B.base(), B.ldim(), beta, C.base(), C.ldim());
     }

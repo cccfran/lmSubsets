@@ -120,7 +120,7 @@ public:
             }
             std::cout << std::endl;
         }
-        std::cout << std::endl;
+        std::cout << "Done QR mat" << std::endl;
 
         lapack::orgqr(n, qrq, aux_tau_, aux_work_);
 
@@ -131,16 +131,16 @@ public:
             }
             std::cout << std::endl;
         }
-        std::cout << std::endl;
+        std::cout << "Done QrQ" << std::endl;
 
         // lapack::ormqr(side, trans, m, qrq, aux_tau_, qty_, aux_work_);
-        lapack::gemm(lapack::trans, lapack::no_trans, 1.0, qrq, qty_, 0.0, qty_);
+        // lapack::gemm(lapack::trans, lapack::no_trans, 1.0, qrq, qty_, 0.0, qty_);
 
-        std::cout << "QTy ********************" << std::endl;
-        for(int i = 0; i < m; ++i) {
-            std::cout << qty_(i,0) << " ";
-        }
-        std::cout << std::endl;
+        // std::cout << "QTy ********************" << std::endl;
+        // for(int i = 0; i < m; ++i) {
+        //     std::cout << qty_(i,0) << " ";
+        // }
+        // std::cout << std::endl;
 
 
         return rz_tmp({0, n + 1}, {0, n + 1});
