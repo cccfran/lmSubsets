@@ -147,6 +147,7 @@ public:
         rz_mat_.swap(other.rz_mat_);
         qt_mat_.swap(other.qt_mat_);
         std::swap(models_, other.models_);
+        std::swap(cur_model_, other.cur_model_);
         std::cout << "SWAPPPPPPPP" << std::endl;
     }
 
@@ -302,11 +303,12 @@ public:
     ) noexcept
     {
         const int n = size();
-        const int m = y.nrow();
+        // const int m = y.nrow();
 
-        matrix residual(m, 1);
+        // matrix residual(m, 1);
 
         // models_.reserve(n);
+        models_.clear();
         for(int j = n; j > mark_; j--) {
             models_.emplace_back(j);
         }
