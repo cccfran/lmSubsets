@@ -134,7 +134,7 @@ public:
         // std::cout << std::endl;
 
         // lapack::ormqr(side, trans, m, qrq, aux_tau_, qty_, aux_work_);
-        lapack::gemm(lapack::trans, lapack::no_trans, 1.0, qrq, qty_, 0.0, qty_);
+        // lapack::gemm(lapack::trans, lapack::no_trans, 1.0, qrq, qty_, 0.0, qty_);
 
         // std::cout << "QTy ********************" << std::endl;
         // for(int i = 0; i < m; ++i) {
