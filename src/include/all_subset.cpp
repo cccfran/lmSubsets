@@ -209,7 +209,7 @@ lmSubsets(
     {
     	// init dca_state 
     	// loop through dca_state
-    	cout << "DCA_all" << endl;
+    	// cout << "DCA_all" << endl;
         std::tie(tab, node_cnt) =
             dca_all<double>(ay_mat, mark, nbest, prad);
     } 
@@ -226,9 +226,9 @@ lmSubsets(
         {
             const auto& res = tab[size - 1][best - 1];
 
-            cout << res.key() << "\t" ;
+            // std::cout << res.key() << "\t" ;
         }
-        cout << endl;
+        // std::cout << std::endl;
     } 
 
     // print subset

@@ -111,9 +111,9 @@ public:
         const int k = root_mark_;
         const int p = root_rank_;
 
-        std::cout << "root size: " << n << std::endl;
-        std::cout << "root mark: " << k << std::endl;
-        std::cout << "root rank: " << p << std::endl;
+        // std::cout << "root size: " << n << std::endl;
+        // std::cout << "root mark: " << k << std::endl;
+        // std::cout << "root rank: " << p << std::endl;
 
         // size of the stack
         node_stk_.reserve(p);

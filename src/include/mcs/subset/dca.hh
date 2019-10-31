@@ -85,7 +85,7 @@ dca_all(
 
     // std::cout << "Inside dca" << std::endl;
     dca_state state(ay_mat, mark, nbest, preo_radius(prad));
-    std::cout << "FInish init" << std::endl;
+    // std::cout << "FInish init" << std::endl;
     const int nodes = detail::dca_all<Scalar, dca_state>(state);
 
     // build table and return number of nodes

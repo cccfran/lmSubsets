@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with 'mcs'.  If not, see <http://www.gnu.org/licenses/>.
 
+// #include <ctime>
 
 
 #ifndef MCS_SUBSET_DETAIL_DCA_HH
@@ -35,6 +36,9 @@ int
 dca_impl(DcaState& state) noexcept
 {
     int node_cnt = 0;
+
+    // clock_t begin = std::clock();
+    // clock_t tmp;
 
     while (!state.is_final())
     {
@@ -73,7 +77,14 @@ dca_impl(DcaState& state) noexcept
             // std::cout << "dropping " << j << std::endl;
 
             state.drop_column(j);
+            
+            // begin = std::clock();
+
             state.get_t(j);
+
+            // tmp = std::clock();
+            // std::cout << "get_t: " << double(tmp - begin) / CLOCKS_PER_SEC << std::endl;
+            // begin = tmp;
         }
 
         // std::cout << std::endl;
