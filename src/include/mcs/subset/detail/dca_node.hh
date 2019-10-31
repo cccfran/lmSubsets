@@ -30,6 +30,7 @@
 #include <utility>  // std::move, std::swap
 #include <vector>
 
+// #include <ctime>
 
 
 #include "gsl/gsl"  // gsl::span
@@ -303,6 +304,10 @@ public:
     ) noexcept
     {
         const int n = size();
+
+        clock_t begin = std::clock();
+        clock_t tmp;
+        
         // const int m = y.nrow();
 
         // matrix residual(m, 1);
@@ -316,8 +321,20 @@ public:
 
         for(int j = n; j > mark_; j--, cur_model_++) {
             get_beta(j);
-            get_sds(X, y, j);
+            // tmp = std::clock();
+            // std::cout << "inner_get_beta: " << double(tmp - begin) / CLOCKS_PER_SEC << std::endl;
+            // begin = tmp;
+            get_sds(j);
+
+            // tmp = std::clock();
+            // std::cout << "inner_get_sd: " << double(tmp - begin) / CLOCKS_PER_SEC << std::endl;
+            // begin = tmp;
         }
+
+        // tmp = std::clock();
+        // std::cout << "inner_get_t_end: " << double(tmp - begin) / CLOCKS_PER_SEC << std::endl;
+        // begin = tmp;
+
     }
 
 
@@ -326,11 +343,13 @@ public:
     {   
         int n = size();
         int cur_size = 0;
+
         matrix betahat(rz_mat_({0, model_size}, {n, 1}));
+        
         lapack::trtrs(rz_mat_({0, model_size}, {0, model_size}), betahat);
- 
+        
         cur_model_->set_beta(betahat);
-        // std::cout << "In get_beta(): " << std::endl;
+        // std::cout << "In get_beta() 3: " << std::endl;
         // for(auto i = subset_.begin(); cur_size < model_size && i != subset_.end(); i++, ++cur_size) {
         //     std::cout << *i << "\t";
         // }
@@ -344,9 +363,9 @@ public:
 
     void
     get_residual(
-        const matrix& X,
-        const matrix& y,
-        matrix& residual_mat,
+        // const matrix& X,
+        // const matrix& y,
+        double* residual_mat,
         const int model_size
     )
     {
@@ -370,32 +389,64 @@ public:
         }
 
         for(int i = 0; i < m; i++) {
-            residual_mat(i, i) = residual(i, 0);
+            // residual_mat(i, i) = residual(i, 0);
+            *(residual_mat + i * (m + 1)) = residual(i, 0);
+
         }
 
         // std::cout << std::endl << "res" << std::endl;
-        // for (int j = 0; j < m; j++) {
-        //     std::cout << residual(j, 0) << " ";
+        // for(int i = 0; i < m; i++) {
+        //     for (int j = 0; j < m; j++) {
+        //         std::cout <<  *(residual_mat + i + j*m) << "\t";
+        //     }
+        //     std::cout << std::endl;
         // }
         // std::cout << std::endl;
     }
 
     void
     get_sds(
-        const matrix& X,
-        const matrix& y,
+        // const matrix& X,
+        // const matrix& y,
         const int model_size
     ) noexcept
     {   
-        const int m = y.nrow();
+        // const int m = y.nrow();
 
-        matrix residual_mat(m, m);
-        matrix qtr(m, m);
+        clock_t begin = std::clock();
+        clock_t tmp;
+
+        // matrix residual_mat_2(m, m);
+        // matrix qtr(m, m);
+        // std::cout << "In get_sds() 1: " << std::endl;
+        double residual_mat[m*m], qtr[model_size*m];
+        // std::cout << "In get_beta() 2: " << std::endl;
+        // tmp = std::clock();
+        // std::cout << "\tget_t_init: " << double(tmp - begin) / CLOCKS_PER_SEC << std::endl;
+        // begin = tmp;
+
+        std::fill(residual_mat, residual_mat + m*m, 0.0);
+
+        // tmp = std::clock();
+        // std::cout << "\tget_t_fill: " << double(tmp - begin) / CLOCKS_PER_SEC << std::endl;
+        // begin = tmp;
+
         matrix sds(model_size, 1);
         
-        qtr = 0;        
-        residual_mat = 0;
-        get_residual(X, y, residual_mat, model_size);
+
+        // tmp = std::clock();
+        // std::cout << "\tget_t_init_sds: " << double(tmp - begin) / CLOCKS_PER_SEC << std::endl;
+        // begin = tmp;
+
+
+        // qtr = 0;        
+        // residual_mat = 0;
+        // get_residual(X, y, residual_mat, model_size);
+        get_residual(residual_mat, model_size);
+
+        // tmp = std::clock();
+        // std::cout << "\tget_t_res: " << double(tmp - begin) / CLOCKS_PER_SEC << std::endl;
+        // begin = tmp;
 
         // std::cout << "Q^T" << std::endl;
         // for (int i = 0; i < qt_mat_.ldim(); i++) {
@@ -409,30 +460,45 @@ public:
         // lapack::ormqr(lapack::left, lapack::trans, m, qrz_->get_qrr(), qrz_->get_tau(), residual_mat, aux_work_);
         // lapack::gemm(lapack::no_trans, lapack::no_trans, model_size, m, m, 1.0, 
         //             qt_mat_.base(), m, residual_mat.base(), m, 0.0, qtr.base(), m);
-        lapack::gemm(lapack::no_trans, lapack::no_trans, 1.0, qt_mat_, residual_mat, 0.0, qtr);
+        // lapack::gemm(lapack::no_trans, lapack::no_trans, 1.0, qt_mat_, residual_mat, 0.0, qtr);
+        lapack::gemm(lapack::no_trans, lapack::no_trans, model_size, m, m, 1.0,
+            qt_mat_.base(), qt_mat_.ldim(), residual_mat, m, 0.0, qtr, m);
+        // tmp = std::clock();
+        // std::cout << "\tget_t_qtR: " << double(tmp - begin) / CLOCKS_PER_SEC << std::endl;
+        // begin = tmp;
+
         // std::cout << "Q^T residual_mat" << std::endl;
         // for (int i = 0; i < model_size; i++) {
         //     for (int j = 0; j < m; j++) {
-        //         std::cout << qtr(i,j) << "\t";
+        //         std::cout << *(qtr + i + j * m) << "\t";
         //     }
         //     std::cout << std::endl;
         // }
-        lapack::trtrs(rz_mat_({0, model_size}, {0, model_size}), qtr);
-        // std::cout << "residual_mat_hat" << std::endl;
-        // for (int i = 0; i < model_size; i++) {
-        //     for (int j = 0; j < m; j++) {
-        //         std::cout << qtr(i,j) << "\t";
-        //     }
-        //     std::cout << std::endl;
-        // }
+        // lapack::trtrs(rz_mat_({0, model_size}, {0, model_size}), qtr);
+        lapack::trtrs(lapack::upper, lapack::no_trans, lapack::no_trans, 
+            model_size, m,
+            rz_mat_({0, model_size}, {0, model_size}),
+            qtr, m);
+
+        // tmp = std::clock();
+        // std::cout << "\tget_t_tri: " << double(tmp - begin) / CLOCKS_PER_SEC << std::endl;
+        // begin = tmp;
 
         for (int i = 0; i < model_size; i++) {
             double tmp = 0; 
             for (int j = 0; j < m; j++) {
-                tmp += std::pow(qtr(i,j), 2.0);
+                tmp += std::pow(*(qtr + i + j * m), 2.0);
             }    
             sds(i, 0) = std::sqrt(tmp);
+            // std::cout << tmp << "\t";
         }
+
+        // std::cout << std::endl;
+
+        // tmp = std::clock();
+        // std::cout << "\tget_t_pow: " << double(tmp - begin) / CLOCKS_PER_SEC << std::endl;
+        // begin = tmp;
+
 
         // std::cout << "sd" << std::endl;
         // for (int i = 0; i < model_size; i++) {
@@ -441,6 +507,7 @@ public:
         // std::cout << std::endl;
 
         cur_model_->set_sds(sds);
+
     }
 
     void

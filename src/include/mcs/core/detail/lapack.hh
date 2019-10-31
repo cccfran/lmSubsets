@@ -311,6 +311,39 @@ public:
 
     static int
     trtrs(
+        const std::string& uplo,
+        const std::string& trans,
+        const std::string& diag,
+        int n,
+        int nrhs,
+        matrix_cspan a,
+        Scalar* b,
+        int ldb
+    ) noexcept
+    {
+        
+        return trtrs(uplo.c_str(), trans.c_str(), diag.c_str(), n, nrhs, a.base(), a.ldim(), b, ldb);
+    }
+
+    static int
+    trtrs(
+        const std::string& uplo,
+        const std::string& trans,
+        const std::string& diag,
+        int n,
+        int nrhs,
+        const Scalar* a,
+        int lda,
+        Scalar* b,
+        int ldb
+    ) noexcept
+    {
+        
+        return trtrs(uplo.c_str(), trans.c_str(), diag.c_str(), n, nrhs, a, lda, b, ldb);
+    }
+
+    static int
+    trtrs(
         const char* uplo,
         const char* trans,
         const char* diag,
