@@ -145,6 +145,13 @@ MCS_F77_NAME(dgemm)(
 );
 
 
+double
+MCS_F77_NAME(dnrm2)(
+    const int* n,
+    const double* X,
+    const int* incx
+);
+
 
 }  // end extern "C"
 
@@ -319,6 +326,20 @@ lapack<double>::gemm(
     info = 1;
 
     return info;
+}
+
+
+template<>
+inline double
+lapack<double>::nrm2(
+    const int n,
+    const double* const X,
+    const int incx
+) noexcept
+{
+    double ret = MCS_F77_CALL(dnrm2)(&n, X, &incx);
+    
+    return ret;
 }
 
 

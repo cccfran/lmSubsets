@@ -416,6 +416,13 @@ public:
     // C = alpha * A * B + beta*C
     // m: row of A,C; n: col of B; k: col of A
 
+    static double
+    nrm2(
+        int n,
+        const Scalar* X,
+        int incx
+    ) noexcept;
+
 public:
 
     lapack() = delete;

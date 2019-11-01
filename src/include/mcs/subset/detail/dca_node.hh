@@ -324,7 +324,9 @@ public:
             // tmp = std::clock();
             // std::cout << "inner_get_beta: " << double(tmp - begin) / CLOCKS_PER_SEC << std::endl;
             // begin = tmp;
-            get_sds(j);
+            // get_sds(j);
+            // std::cout << "before sd: " << std::endl;
+            get_sds(j, 1.0);
 
             // tmp = std::clock();
             // std::cout << "inner_get_sd: " << double(tmp - begin) / CLOCKS_PER_SEC << std::endl;
@@ -510,6 +512,34 @@ public:
 
     }
 
+    void
+    get_sds(
+        const int model_size,
+        double sigma
+    ) noexcept
+    {   
+        
+        matrix sds(model_size, 1);
+        double rt_inv[model_size*model_size];
+
+        std::fill(rt_inv, rt_inv + model_size*model_size, 0.0);
+        for(int i = 0; i < model_size; ++i) {
+            *(rt_inv + i * (model_size + 1)) = 1.0;
+        }
+
+        lapack::trtrs(lapack::upper, lapack::trans, lapack::no_trans, 
+            model_size, model_size,
+            rz_mat_({0, model_size}, {0, model_size}),
+            rt_inv, model_size);
+
+        for(int i = 0; i < model_size; ++i) {
+            sds(i, 0) = lapack::nrm2(model_size, rt_inv + i * model_size, 1);
+            // std::cout << sds(i, 0) << "\t";
+        }
+
+        cur_model_->set_sds(sds);
+
+    }
 
     void
     preorder_complete(
