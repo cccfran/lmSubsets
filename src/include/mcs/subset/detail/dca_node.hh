@@ -164,7 +164,7 @@ public:
         for (int j = 0; j < n; ++j)  subset_.push_back(j);
         mark_ = 0;
         rz_mat_ = rz_mat;
-        qt_mat_ = qrz_->qt();
+        qrz_->qt(qt_mat_);
         // qt_mat_ = qrz_->get_qt();
         // std::cout << "root of node mark: " << mark_ << std::endl;
         // std::cout << "root of node cols: " << n << std::endl;
@@ -305,8 +305,8 @@ public:
     {
         const int n = size();
 
-        clock_t begin = std::clock();
-        clock_t tmp;
+        // clock_t begin = std::clock();
+        // clock_t tmp;
         
         // const int m = y.nrow();
 
@@ -342,7 +342,7 @@ public:
     get_beta(const int model_size) noexcept
     {   
         int n = size();
-        int cur_size = 0;
+        // int cur_size = 0;
 
         matrix betahat(rz_mat_({0, model_size}, {n, 1}));
         
@@ -509,6 +509,7 @@ public:
         cur_model_->set_sds(sds);
 
     }
+
 
     void
     preorder_complete(

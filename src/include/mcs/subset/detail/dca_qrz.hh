@@ -343,21 +343,17 @@ public:
         // }
     }
 
-
-    matrix& 
-    qt()
+    void
+    qt(matrix& qrqt)
     {
         const int m = qrq.ncol();
         const int n = qrq.nrow();
 
-        matrix qrqt(m, n);
         for(int i = 0; i < m; i++) {
             for (int j = 0; j < n; j++) {
                 qrqt(i, j) = qrq(j, i);
             }
         }
-
-        return qrqt;
     }
 
 
