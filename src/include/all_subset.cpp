@@ -35,6 +35,7 @@ using mcs::subset::abba_all;
 using mcs::subset::hbba_all;
 using mcs::subset::bba_all;
 using mcs::subset::dca_all;
+using mcs::subset::dca_all_boot;
 
 using mcs::subset::subset_best;
 using mcs::subset::abba_best;
@@ -68,7 +69,8 @@ lmSubsets(
     SEXP r_mark,
     SEXP r_tau,
     SEXP r_nbest,
-    SEXP r_prad
+    SEXP r_prad,
+    SEXP r_nboot
 )
 {
     int protect_cnt = 0;
@@ -177,6 +179,13 @@ lmSubsets(
         Rf_error("'prad' [%d] must be a non-negative integer", prad);
     }
 
+    if (!Rf_isNumeric(r_nboot))
+    {
+        Rf_unprotect(protect_cnt);
+        Rf_error("'nboot' must be numeric");
+    }
+
+    const int nboot = Rf_asInteger(r_nboot);
 
     r_interrupt_setup();
 
@@ -210,8 +219,10 @@ lmSubsets(
     	// init dca_state 
     	// loop through dca_state
     	// cout << "DCA_all" << endl;
+        // std::tie(tab, node_cnt) =
+        //     dca_all<double>(ay_mat, mark, nbest, prad);
         std::tie(tab, node_cnt) =
-            dca_all<double>(ay_mat, mark, nbest, prad);
+            dca_all_boot<double>(ay_mat, mark, nbest, prad, nboot);
     } 
     else
     {

@@ -46,6 +46,7 @@
 
 #include "mcs/core/model.hh"
 
+
 namespace mcs    {
 namespace subset {
 namespace detail {
@@ -92,6 +93,10 @@ private:
 
     std::vector<model> models_;
 
+    std::vector<double> maxt_boot_;
+
+    int nboot_;
+
 public:
 
     typename decltype(models_)::iterator cur_model_;
@@ -134,6 +139,28 @@ public:
     {
         subset_.reserve(root_size);    
         models_.reserve(root_size);
+    }
+
+
+    // pass in whole qrz object 
+    dca_node(const int root_size, 
+             const int ay_nrow, 
+             dca_qrz* qrz, 
+             matrix X_,
+             matrix y_,
+             const int nboot) noexcept :
+        rz_mat_(root_size + 1, root_size + 1),
+        qt_mat_(root_size + 1, ay_nrow),
+        qty_(ay_nrow),
+        qrz_(qrz), 
+        X(X_),
+        y(y_),
+        m(ay_nrow),
+        nboot_(nboot)
+    {
+        subset_.reserve(root_size);    
+        models_.reserve(root_size);
+        maxt_boot_.reserve(nboot_);
     }
 
 
@@ -264,6 +291,30 @@ public:
     }
 
 
+    template<typename Function>
+    void
+    for_each_boot(Function f) const noexcept
+    {
+        // get all rss of submodel in this node
+        const int n = size();
+        const int k = mark_;
+
+        gsl::span<const int> s = subset_;
+
+        auto model_ptr = models_.begin();
+        
+        for (int j = n; j > k; --j, ++model_ptr)
+        {
+            f(s.first(j), maxt_boot_);
+        }
+
+        // std::cout << "dca_node: for_each()" << std::endl;
+        // std::cout << "size of rz: (" << rz_mat_.nrow() << ", " << rz_mat_.ncol() << ")" << std::endl;
+        // std::cout << "mark_ in node: " << k << std::endl;
+
+    }
+
+
     void
     drop_column(
         const int mark,
@@ -338,6 +389,54 @@ public:
         // begin = tmp;
 
     }
+
+
+    void
+    get_t(
+        const int mark,
+        const dca_qrz& qrz,
+        const matrix& X,
+        const matrix& y,
+        const int nboot,
+        std::vector<double> const &multiplier_mat
+    ) noexcept
+    {
+        const int n = size();
+
+        // clock_t begin = std::clock();
+        // clock_t tmp;
+        
+        // const int m = y.nrow();
+
+        // matrix residual(m, 1);
+
+        // models_.reserve(n);
+        models_.clear();
+        for(int j = n; j > mark_; j--) {
+            models_.emplace_back(j);
+        }
+        cur_model_ = models_.begin();
+
+        for(int j = n; j > mark_; j--, cur_model_++) {
+            get_beta(j);
+            // tmp = std::clock();
+            // std::cout << "inner_get_beta: " << double(tmp - begin) / CLOCKS_PER_SEC << std::endl;
+            // begin = tmp;
+            // get_sds(j);
+            // std::cout << "before sd: " << std::endl;
+            get_sds(j, nboot, multiplier_mat);
+
+            // tmp = std::clock();
+            // std::cout << "inner_get_sd: " << double(tmp - begin) / CLOCKS_PER_SEC << std::endl;
+            // begin = tmp;
+        }
+
+        // tmp = std::clock();
+        // std::cout << "inner_get_t_end: " << double(tmp - begin) / CLOCKS_PER_SEC << std::endl;
+        // begin = tmp;
+
+    }
+
 
 
     void
@@ -509,6 +608,151 @@ public:
         // std::cout << std::endl;
 
         cur_model_->set_sds(sds);
+
+    }
+
+    void
+    get_sds(
+        // const matrix& X,
+        // const matrix& y,
+        const int model_size,
+        const int nboot,
+        std::vector<double> const &multiplier_mat
+    ) noexcept
+    {   
+        // clock_t begin = std::clock();
+        // clock_t tmp_c;
+
+        double residual_mat[m*m], qtr[model_size*m];
+        double boot_mat[nboot*m];
+        // double boot_mat[nboot*model_size];
+        
+        std::fill(residual_mat, residual_mat + m*m, 0.0);
+
+        matrix sds(model_size, 1);
+
+        // std::default_random_engine generator;
+        // std::normal_distribution<double> distribution(0.0, 1.0);
+        // std::mt19937_64 random;
+        // cxx::ziggurat_normal_distribution<double> normal{0.0, 1.0};
+        
+        get_residual(residual_mat, model_size);
+    
+        lapack::gemm(lapack::no_trans, lapack::no_trans, model_size, m, m, 1.0,
+            qt_mat_.base(), qt_mat_.ldim(), residual_mat, m, 0.0, qtr, m);
+        
+        lapack::trtrs(lapack::upper, lapack::no_trans, lapack::no_trans, 
+            model_size, m,
+            rz_mat_({0, model_size}, {0, model_size}),
+            qtr, m);
+
+        // tmp_c = std::clock();
+        // std::cout << "sds 1: " << double(tmp_c - begin) / CLOCKS_PER_SEC << std::endl;
+        // begin = tmp_c;
+
+        // std::cout << "Q^T residual_mat" << std::endl;
+        // for (int i = 0; i < model_size; i++) {
+        //     for (int j = 0; j < m; j++) {
+        //         std::cout << *(qtr + i + j * m) << "\t";
+        //     }
+        //     std::cout << std::endl;
+        // }
+        // std::cout << std::endl;
+
+        // BOOTSTRAP
+        double tmp, maxt = 0;
+        auto w = multiplier_mat.begin();
+        for (int iboot = 0; iboot < nboot; ++iboot, ++w) {
+            for (int i = 0; i < model_size; ++i) {
+                tmp = 0;
+                for (int j = 0; j < m; j++) {
+                    // w = distribution(generator);
+                    // w = normal(random);
+                    tmp += *w * *(qtr + i + j * m);
+                }
+                *(boot_mat + i + iboot * model_size) = tmp;
+            }
+        }
+        
+        // tmp_c = std::clock();
+        // std::cout << "bs: " << double(tmp_c - begin) / CLOCKS_PER_SEC << std::endl;
+        // begin = tmp_c;
+
+        // std::cout << "Bootmat" << std::endl;
+        // for (int iboot = 0; iboot < 10; iboot++) {
+        //     for (int i = 0; i < model_size; i++) {
+        //         std::cout << *(boot_mat + i + iboot * model_size) << "\t";
+        //     }
+        //     std::cout << std::endl;
+        // }
+
+        // std::cout << "SDs: " << nboot << std::endl;
+        // BOOTSTRAP estimate of sandwich
+        // for (int i = 0; i < model_size; i++) {
+        //     tmp = 0; 
+        //     for (int iboot = 0; iboot < nboot; iboot++) {
+        //         tmp += std::pow(*(boot_mat + i + iboot * model_size), 2.0);
+        //     }    
+        //     sds(i, 0) = std::sqrt(tmp / nboot);
+        //     // std::cout << sds(i, 0) << "\t" << std::endl;
+        // }
+
+        // cur_model_->set_sds(sds);
+
+        for (int i = 0; i < model_size; i++) {
+            double tmp = 0; 
+            for (int j = 0; j < m; j++) {
+                tmp += std::pow(*(qtr + i + j * m), 2.0);
+            }    
+            sds(i, 0) = std::sqrt(tmp);
+            // std::cout << tmp << "\t";
+        }
+        cur_model_->set_sds(sds);
+
+
+        // tmp_c = std::clock();
+        // std::cout << "sds sum: " << double(tmp_c - begin) / CLOCKS_PER_SEC << std::endl;
+        // begin = tmp_c;
+
+        // Bootstrap old
+        // double maxt, tmp;
+        // auto w = multiplier_mat.begin();
+        // for (int iboot = 0; iboot < nboot_; ++iboot, ++w) {
+        //     for (int j = 0; j < m; ++j) {
+        //         // double w = distribution(generator);
+        //         // w = normal(random);
+        //         *(boot_mat + j + iboot * m) = *w * residual_mat[j * (m + 1)];
+        //     }
+        // }
+
+        // tmp_c = std::clock();
+        // std::cout << "bs multiplier: " << double(tmp_c - begin) / CLOCKS_PER_SEC << std::endl;
+        // begin = tmp_c;
+
+        // lapack::gemm(lapack::no_trans, lapack::no_trans, model_size, m, m, 1.0,
+        //     qt_mat_.base(), qt_mat_.ldim(), boot_mat, m, 0.0, boot_mat, m);
+        // lapack::trtrs(lapack::upper, lapack::no_trans, lapack::no_trans, 
+        //     model_size, m,
+        //     rz_mat_({0, model_size}, {0, model_size}),
+        //     boot_mat, m);
+
+        // tmp_c = std::clock();
+        // std::cout << "bs: " << double(tmp_c - begin) / CLOCKS_PER_SEC << std::endl;
+        // begin = tmp_c;
+
+        // get maxt for each boot
+        for (int iboot = 0; iboot < nboot; ++iboot) {
+            maxt = 0;
+            for (int i = 0; i < model_size; ++i) {
+                tmp = std::abs(*(boot_mat + i + iboot * model_size) / sds(i, 0));
+                if (maxt < tmp) maxt = tmp;
+            }
+            maxt_boot_.push_back(maxt);
+        }
+
+        // tmp_c = std::clock();
+        // std::cout << "boots: " << double(tmp_c - begin) / CLOCKS_PER_SEC << std::endl;
+        // begin = tmp_c;
 
     }
 

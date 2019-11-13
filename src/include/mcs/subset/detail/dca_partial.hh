@@ -153,6 +153,122 @@ public:
 };
 
 
+template<typename Scalar>
+class dca_partial_all_boot
+{
+
+    using aux_heap = detail::aux_heap<Scalar>;
+
+    using dca_node = detail::dca_node<Scalar>;
+
+    using dca_result = detail::dca_result<Scalar>;
+
+    using heap_vec = std::vector<aux_heap>;
+
+
+
+private:
+
+    std::vector<heap_vec> heaps_boot_;
+
+    int root_size_;
+
+    int nboot_;
+
+    std::vector<aux_heap> heaps_;
+
+public:
+
+    dca_partial_all_boot(
+        const int root_size,
+        const int nbest,
+        const int nboot
+    ) noexcept :
+        root_size_(root_size),
+        nboot_(nboot)
+    {
+        // heaps_boot_.reserve(nboot);
+        // for (int iboot = 0; iboot < nboot; ++iboot) {
+        //     auto& heaps = heaps_boot_[iboot];
+        //     heaps.reserve(root_size);
+        //     for (int size = 1; size <= root_size; ++size) {
+        //         heaps.emplace_back(size, nbest);
+        //     }
+        // }
+
+        heaps_.reserve(root_size);
+        // std::cout << "HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHeap: " << root_size << std::endl;
+        for (int size = 1; size <= root_size; ++size)
+        {
+            heaps_.emplace_back(size, nbest);
+        }
+    }
+
+
+
+public:
+
+    // void
+    // update(const dca_node& node) noexcept
+    // {
+    //     node.for_each_boot(
+    //         [this](
+    //             gsl::span<const int> subset,
+    //             std::vector<double> maxt_boot
+    //         ) -> void {
+    //             const int size = subset.size();
+
+    //             for(int iboot = 0; iboot < nboot_; ++iboot) {
+    //                 double maxt = maxt_boot[iboot];
+    //                 auto& heap = heaps_boot_[iboot][size - 1];
+    //                 if (maxt > heap.min_key())
+    //                 {
+    //                     heap.insert(subset, maxt);
+    //                 }
+    //             }
+    //         });
+    // }
+
+
+    // std::vector<std::vector<dca_result>>
+    // results() const noexcept
+    // {
+    //     return util::transform(heaps_boot_[0], [](const aux_heap& h) {
+    //             return h.results();
+    //         });
+    // }
+
+
+     void
+    update(const dca_node& node) noexcept
+    {
+
+        node.for_each(
+            [this](
+                gsl::span<const int> subset,
+                const Scalar maxt
+            ) -> void {
+                const int size = subset.size();
+
+                auto& heap = heaps_[size - 1];
+                if (maxt > heap.min_key())
+                {
+                    heap.insert(subset, maxt);
+                }
+            });
+    }
+
+
+    std::vector<std::vector<dca_result>>
+    results() const noexcept
+    {
+        return util::transform(heaps_, [](const aux_heap& h) {
+                return h.results();
+            });
+    }
+
+};
+
 
 template<typename Scalar>
 class dca_partial_best

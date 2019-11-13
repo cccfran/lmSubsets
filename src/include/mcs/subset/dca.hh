@@ -93,6 +93,32 @@ dca_all(
 }
 
 
+template<typename Scalar>
+std::pair<table_all<Scalar>, int>
+dca_all_boot(
+    mcs::core::matrix<const Scalar&> ay_mat,
+    const int mark,
+    const int nbest,
+    const int prad = 0,
+    const int nboot = 100
+) noexcept
+{
+    using namespace mcs::subset::detail;
+
+    using preo_complete = dca_preo::complete<Scalar>;
+    using preo_radius = dca_preo::radius<Scalar, preo_complete>;
+    using dca_state = dca_state_all_boot<Scalar, preo_radius>;
+
+    // std::cout << "Inside dca" << std::endl;
+    dca_state state(ay_mat, mark, nbest, preo_radius(prad), nboot);
+    // std::cout << "FInish init" << std::endl;
+    const int nodes = detail::dca_all<Scalar, dca_state>(state);
+
+    // build table and return number of nodes
+    return { state.table(), nodes };
+}
+
+
 
 }  // namespace subset
 }  // namespace mcs

@@ -27,6 +27,7 @@
 #include <utility>  // std::declval
 #include <vector>
 
+#include <random>
 
 
 #include "mcs/core/matrix.hh"
@@ -38,6 +39,8 @@
 #include "mcs/util/algo.hh"  // algo::concat, algo::iota, algo::map, algo::plus,
                              // algo::repeat, algo::transform
 #include "mcs/util/function_traits.hh"
+
+#include "mcs/core/ziggurat.hpp"  // Ziggurat normal generator
 
 
 
@@ -131,7 +134,58 @@ public:
         // pass the tri
         // p+1 because of y
         nxt_node_->root(qrz_.rz(ay_mat)({k, p+1}, {k, p+1}));
+        // BOOTSTRAP
         nxt_node_->get_t(root_mark_, qrz_, X_, y_);
+
+        root_rss_ = nxt_node_->rss();
+
+        
+        // a return rank_instance<Scalar, complete_ins, null_inst>
+        node_xfer_ = node_xfer.make(*this);
+
+
+    }
+
+
+    dca_state_base(
+        matrix_cspan ay_mat,
+        const int mark,
+        const NodeXfer& node_xfer,
+        const int nboot
+    ) noexcept :
+        qrz_(ay_mat.ncol() - 1, ay_mat.nrow()),
+        root_size_(ay_mat.ncol() - 1),
+        root_mark_(mark),
+        root_rank_(root_size_ - root_mark_),
+        X_(ay_mat({0, ay_mat.nrow()}, {0, ay_mat.ncol()-1})),
+        y_(ay_mat({0, ay_mat.nrow()}, {ay_mat.ncol()-1, 1}))
+    {
+        const int n = root_size_;
+        const int k = root_mark_;
+        const int p = root_rank_;
+
+        // std::cout << "root size: " << n << std::endl;
+        // std::cout << "root mark: " << k << std::endl;
+        // std::cout << "root rank: " << p << std::endl;
+
+        // size of the stack
+        node_stk_.reserve(p);
+        for (int i = 0; i < p; ++i)
+        {   
+            // emplace_back: append new container (dca_node) at the end
+            node_stk_.emplace_back(p, ay_mat.nrow(), 
+                &qrz_, X_, y_, nboot);
+            // node_stk_.emplace_back(p, ay_mat.nrow(), &qrz_);
+        }
+
+        cur_node_ = node_stk_.begin();
+
+        nxt_node_ = cur_node_ + 1;
+        // pass the tri
+        // p+1 because of y
+        nxt_node_->root(qrz_.rz(ay_mat)({k, p+1}, {k, p+1}));
+        // BOOTSTRAP
+        // nxt_node_->get_t(root_mark_, qrz_, X_, y_, nboot);
 
         root_rss_ = nxt_node_->rss();
 
@@ -206,6 +260,7 @@ public:
     void
     get_t(const int mark) noexcept
     {
+        // BOOTSTRAP
         nxt_node_->get_t(mark - root_mark_, qrz_, X_, y_);
     }
 
@@ -291,7 +346,6 @@ public:
         nbest_(nbest)
     {
     }
-
 
 
 public:
@@ -403,6 +457,181 @@ public:
 
 
 
+
+template<typename Scalar,
+         typename NodeXfer>
+class dca_state_all_boot : private dca_state_base<Scalar, NodeXfer>
+{
+
+    using base = dca_state_base<Scalar, NodeXfer>;
+
+    using dca_partial = detail::dca_partial_all_boot<Scalar>;
+
+    using dca_result = detail::dca_result<Scalar>;
+
+    using matrix_cspan = mcs::core::matrix<const Scalar&>;
+
+
+
+private:
+
+    dca_partial partial_;
+
+    int nbest_;
+
+    // BOOTSTRAP
+    int nboot_;
+
+public: 
+
+    std::vector<double> multiplier_mat;
+
+public:
+
+
+    dca_state_all_boot(
+        matrix_cspan ay_mat,
+        const int mark,
+        const int nbest,
+        const NodeXfer& node_xfer,
+        // BOOTSTRAP
+        const int nboot
+    ) noexcept :
+        // BOOTSTRAP
+        base(ay_mat, mark, node_xfer, nboot),
+        partial_(base::root_rank(), nbest, nboot),
+        nbest_(nbest),
+        nboot_(nboot)
+    {   
+
+        multiplier_mat.reserve(nboot * ay_mat.nrow());
+        std::mt19937_64 random;
+        cxx::ziggurat_normal_distribution<double> normal{0.0, 1.0};
+
+        for(int i = 0; i < nboot * ay_mat.nrow(); ++i) {
+            multiplier_mat.push_back(normal(random));
+        }
+
+        base::nxt_node_->get_t(base::root_mark_, base::qrz_, base::X_, base::y_, nboot, multiplier_mat);
+    }
+
+
+
+
+public:
+
+    using base::is_final;
+
+    using base::node_size;
+
+    using base::node_mark;
+
+    using base::node_rss;
+
+    using base::drop_column;
+
+    using base::root_rss;
+
+    using base::get_cur_node;
+
+    void
+    get_t(const int mark) noexcept
+    {
+        // BOOTSTRAP
+        base::nxt_node_->get_t(mark - base::root_mark_, base::qrz_, base::X_, base::y_, nboot_, multiplier_mat);
+    }
+
+
+
+    Scalar
+    rss_inf() const noexcept
+    {
+        return root_rss();
+    }
+
+
+
+    void
+    next_node() noexcept
+    {
+        base::next_node();
+        // partial get update!
+        partial_.update(*base::cur_node_);
+        // partial_.update(*base::cur_node_, base::qrz_);
+    }
+
+
+
+    Scalar
+    rss_bound() const noexcept
+    {
+        return base::cur_node_->rss();
+    }
+
+
+
+    Scalar
+    min_rss(const int size) const noexcept
+    {
+        return partial_.min_rss(size - base::root_mark());
+    }
+
+
+
+    std::vector<std::vector<dca_result>>
+    table() const noexcept
+    {
+        const int root_mark = this->root_mark();
+
+        const auto prefix = util::iota(0, root_mark);
+
+        // return dca_result type
+        const auto xform = [&prefix, &root_mark](
+            const dca_result& r 
+        ) -> dca_result {
+            if (!r)  return {};
+
+            // auto subset_ret = util::transform(r, [&root_mark](int i) {
+            //                 return i + root_mark;
+            //             });
+
+            // std::cout << "*** table: " << r.key() << std::endl;
+            // std::cout << "prefix: " << std::endl;
+            // for(auto x : subset_ret) std::cout << x << ' ';
+            // std::cout << std::endl;
+            // for(auto x : r.subset()) std::cout << x  << ' ';
+            // std::cout << std::endl;
+
+            return {
+                util::concat(
+                    prefix,
+                    // [] returns the subset[i] of this state
+                    // for each subset[i], add root_mark
+                    util::transform(r, [&root_mark](int i) {
+                            return i + root_mark;
+                        })
+                ),
+                r.key()
+            };
+        };
+        
+
+        return util::concat(
+            util::repeat(util::repeat(dca_result(), nbest_), root_mark),
+            util::transform(
+                // partial_ restore results of rss in a heap
+                partial_.results(),
+                [&xform](const std::vector<dca_result>& r) {
+                    return util::transform(r, xform);
+                }
+            )
+        );
+    }
+
+};
+
+
+
 template<typename Scalar,
          typename CostFunc,
          typename NodeXfer>
@@ -448,9 +677,11 @@ public:
         const int mark,
         const CostFunc& cost_func,
         const int nbest,
-        const NodeXfer& node_xfer
+        const NodeXfer& node_xfer,
+        // BOOTSTRAP
+        const int nboot
     ) noexcept :
-        base(ay_mat, mark, node_xfer),
+        base(ay_mat, mark, node_xfer, nboot),
         partial_(base::root_rank(), nbest),
         cost_func_(cost_func)
     {
