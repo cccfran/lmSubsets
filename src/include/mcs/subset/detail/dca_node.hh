@@ -661,16 +661,16 @@ public:
 
         // BOOTSTRAP
         double tmp, maxt = 0;
-        auto w = multiplier_mat.begin();
-        for (int iboot = 0; iboot < nboot; ++iboot, ++w) {
+        // auto w = multiplier_mat.begin();
+        for (int iboot = 0; iboot < nboot; ++iboot) {
             for (int i = 0; i < model_size; ++i) {
                 tmp = 0;
                 for (int j = 0; j < m; j++) {
                     // w = distribution(generator);
                     // w = normal(random);
-                    tmp += *w * *(qtr + i + j * m);
+                    tmp += multiplier_mat[j + iboot*m] * *(qtr + i + j*m);
                 }
-                *(boot_mat + i + iboot * model_size) = tmp;
+                *(boot_mat + i + iboot*model_size) = tmp;
             }
         }
         
