@@ -495,7 +495,8 @@ public:
         const int nbest,
         const NodeXfer& node_xfer,
         // BOOTSTRAP
-        const int nboot
+        const int nboot,
+        const int boot_type
     ) noexcept :
         // BOOTSTRAP
         base(ay_mat, mark, node_xfer, nboot),
@@ -503,13 +504,26 @@ public:
         nbest_(nbest),
         nboot_(nboot)
     {   
+        std::cout << "boot_type: " << boot_type << std::endl;
 
         multiplier_mat.reserve(nboot * ay_mat.nrow());
         std::mt19937_64 random;
-        cxx::ziggurat_normal_distribution<double> normal{0.0, 1.0};
-
-        for(int i = 0; i < nboot * ay_mat.nrow(); ++i) {
-            multiplier_mat.push_back(normal(random));
+        
+        if (boot_type == 1) {
+            cxx::ziggurat_normal_distribution<double> distribution{0.0, 1.0};
+            for (int i = 0; i < nboot * ay_mat.nrow(); ++i) {
+                multiplier_mat.push_back(distribution(random));
+            }
+        } else if (boot_type == 2) {
+            std::bernoulli_distribution distribution(0.5);
+            for (int i = 0; i < nboot * ay_mat.nrow(); ++i) {
+                multiplier_mat.push_back((distribution(random) == 0) ? -1 : 1);
+            }
+        } else {
+            std::bernoulli_distribution distribution(0.5 + 0.5/std::sqrt(5));
+            for (int i = 0; i < nboot * ay_mat.nrow(); ++i) {
+                multiplier_mat.push_back((distribution(random) == 0) ? (-0.5 - std::sqrt(5)/2) : (0.5 + std::sqrt(5)/2));
+            }
         }
 
         base::nxt_node_->get_t(base::root_mark_, base::qrz_, base::X_, base::y_, nboot, multiplier_mat);

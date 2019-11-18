@@ -100,7 +100,8 @@ dca_all_boot(
     const int mark,
     const int nbest,
     const int prad = 0,
-    const int nboot = 100
+    const int nboot = 100,
+    const int boot_type = 1
 ) noexcept
 {
     using namespace mcs::subset::detail;
@@ -110,7 +111,7 @@ dca_all_boot(
     using dca_state = dca_state_all_boot<Scalar, preo_radius>;
 
     // std::cout << "Inside dca" << std::endl;
-    dca_state state(ay_mat, mark, nbest, preo_radius(prad), nboot);
+    dca_state state(ay_mat, mark, nbest, preo_radius(prad), nboot, boot_type);
     // std::cout << "FInish init" << std::endl;
     const int nodes = detail::dca_all<Scalar, dca_state>(state);
 

@@ -59,6 +59,10 @@ const std::string algo_bba = "bba";
 const std::string algo_dca = "dca";
 const std::string algo_hbba = "hbba";
 
+const std::string boot_gaussian = "gaussian";
+const std::string boot_rademacher = "rademacher";
+const std::string boot_wild = "wild";
+
 }
 
 // [[Rcpp::export]]
@@ -70,7 +74,8 @@ lmSubsets(
     SEXP r_tau,
     SEXP r_nbest,
     SEXP r_prad,
-    SEXP r_nboot
+    SEXP r_nboot,
+    SEXP r_boot_type
 )
 {
     int protect_cnt = 0;
@@ -187,6 +192,22 @@ lmSubsets(
 
     const int nboot = Rf_asInteger(r_nboot);
 
+    if (!Rf_isNull(r_boot_type) && !Rf_isString(r_boot_type))
+    {
+        Rf_unprotect(protect_cnt);
+        Rf_error("'boot_type' must be a character string");
+    }
+
+    const auto boot_type = [&r_boot_type]() -> int {
+        if (!Rf_isNull(r_boot_type)) {
+            std::string type = CHAR(STRING_ELT(r_boot_type, 0));
+            if (type == boot_gaussian) {return 1;} 
+            else if (type == boot_rademacher) {return 2;}
+            else {return 3;}
+        }
+        return 1;
+    }();
+
     r_interrupt_setup();
 
     // Main function 
@@ -222,7 +243,7 @@ lmSubsets(
         // std::tie(tab, node_cnt) =
         //     dca_all<double>(ay_mat, mark, nbest, prad);
         std::tie(tab, node_cnt) =
-            dca_all_boot<double>(ay_mat, mark, nbest, prad, nboot);
+            dca_all_boot<double>(ay_mat, mark, nbest, prad, nboot, boot_type);
     } 
     else
     {
